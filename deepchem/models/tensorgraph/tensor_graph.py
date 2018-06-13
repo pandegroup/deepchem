@@ -125,7 +125,6 @@ class TensorGraph(Model):
           submodel=None,
           **kwargs):
     """Train this model on a dataset.
-
     Parameters
     ----------
     dataset: Dataset
@@ -159,7 +158,6 @@ class TensorGraph(Model):
                     restore=False,
                     submodel=None):
     """Train this model on data from a generator.
-
     Parameters
     ----------
     feed_dict_generator: generator
@@ -176,7 +174,6 @@ class TensorGraph(Model):
     submodel: Submodel
       an alternate training objective to use.  This should have been created by
       calling create_submodel().
-
     Returns
     -------
     the average loss over the most recent checkpoint interval
@@ -328,12 +325,10 @@ class TensorGraph(Model):
 
   def __call__(self, *inputs, **kwargs):
     """Execute the model in eager mode to compute outputs as a function of inputs.
-
     This is very similar to predict_on_batch(), except that it returns the outputs
     as tensors rather than numpy arrays.  That means you can compute the graph's
     outputs, then do additional calculations based on them, and gradients will
     be tracked correctly through the whole process.
-
     Parameters
     ----------
     inputs: tensors
@@ -344,7 +339,6 @@ class TensorGraph(Model):
     outputs: list of Layers
       the output layers to compute.  If this is omitted, self.outputs is used
       (that is, all outputs that have been added by calling add_output()).
-
     Returns
     -------
     The output tensors, or a list of tensors if multiple outputs were requested.
@@ -367,10 +361,8 @@ class TensorGraph(Model):
   def _predict(self, generator, transformers, outputs, uncertainty):
     """
     Predict outputs for data provided by a generator.
-
     This is the private implementation of prediction.  Do not call it directly.
     Instead call one of the public prediction methods.
-
     Parameters
     ----------
     generator: Generator
@@ -473,14 +465,12 @@ class TensorGraph(Model):
 
   def predict_on_batch(self, X, transformers=[], outputs=None):
     """Generates predictions for input samples, processing samples in a batch.
-
     Parameters
     ----------
     X: ndarray
       the input data, as a Numpy array.
     transformers: List
       List of dc.trans.Transformers
-
     Returns
     -------
     A Numpy array of predictions.
@@ -492,21 +482,18 @@ class TensorGraph(Model):
   def predict_uncertainty_on_batch(self, X, masks=50):
     """
     Predict the model's outputs, along with the uncertainty in each one.
-
     The uncertainty is computed as described in https://arxiv.org/abs/1703.04977.
     It involves repeating the prediction many times with different dropout masks.
     The prediction is computed as the average over all the predictions.  The
     uncertainty includes both the variation among the predicted values (epistemic
     uncertainty) and the model's own estimates for how well it fits the data
     (aleatoric uncertainty).  Not all models support uncertainty prediction.
-
     Parameters
     ----------
     X: ndarray
       the input data, as a Numpy array.
     masks: int
       the number of dropout masks to average over
-
     Returns
     -------
     for each output, a tuple (y_pred, y_std) where y_pred is the predicted
@@ -519,7 +506,6 @@ class TensorGraph(Model):
   def predict(self, dataset, transformers=[], outputs=None):
     """
     Uses self to make predictions on provided Dataset object.
-
     Parameters
     ----------
     dataset: dc.data.Dataset
@@ -530,7 +516,6 @@ class TensorGraph(Model):
       If outputs is None, then will assume outputs=self.outputs. If outputs is
       a Layer/Tensor, then will evaluate and return as a single ndarray. If
       outputs is a list of Layers/Tensors, will return a list of ndarrays.
-
     Returns
     -------
     results: numpy ndarray or list of numpy ndarrays
@@ -541,21 +526,18 @@ class TensorGraph(Model):
   def predict_uncertainty(self, dataset, masks=50):
     """
     Predict the model's outputs, along with the uncertainty in each one.
-
     The uncertainty is computed as described in https://arxiv.org/abs/1703.04977.
     It involves repeating the prediction many times with different dropout masks.
     The prediction is computed as the average over all the predictions.  The
     uncertainty includes both the variation among the predicted values (epistemic
     uncertainty) and the model's own estimates for how well it fits the data
     (aleatoric uncertainty).  Not all models support uncertainty prediction.
-
     Parameters
     ----------
     dataset: dc.data.Dataset
       Dataset to make prediction on
     masks: int
       the number of dropout masks to average over
-
     Returns
     -------
     for each output, a tuple (y_pred, y_std) where y_pred is the predicted
@@ -661,15 +643,15 @@ class TensorGraph(Model):
       if self.random_seed is not None:
         tf.set_random_seed(self.random_seed)
       self._install_queue()
+      self.built = True
       for layer in self.topsort():
         with tf.name_scope(layer.name):
           layer.create_tensor(training=self._training_placeholder)
           self.rnn_initial_states += layer.rnn_initial_states
           self.rnn_final_states += layer.rnn_final_states
           self.rnn_zero_states += layer.rnn_zero_states
-          layer.add_summary_to_tg()
+          layer.add_summary_to_tg(self.get_layer_variables(layer))
       self.session = tf.Session(config=self.configproto)
-      self.built = True
 
       # Ensure all training operators have been created.
 
@@ -747,12 +729,10 @@ class TensorGraph(Model):
 
   def add_variance(self, layer):
     """Add a layer that computes the variance in an output.
-
     If a model supports uncertainty, it must call add_variance() once for every
     output.  Each variance layer has the same shape as the corresponding output,
     and each element computes an estimate of the variance from aleatoric
     uncertainty in the corresponding element of the output.
-
     In addition, if a model supports uncertainty it MUST use dropout on every
     layer.  Otherwise, the uncertainties it computes will be inaccurate.
     """
@@ -765,19 +745,16 @@ class TensorGraph(Model):
 
   def create_submodel(self, layers=None, loss=None, optimizer=None):
     """Create an alternate objective for training one piece of a TensorGraph.
-
     A TensorGraph consists of a set of layers, and specifies a loss function and
     optimizer to use for training those layers.  Usually this is sufficient, but
     there are cases where you want to train different parts of a model separately.
     For example, a GAN consists of a generator and a discriminator.  They are
     trained separately, and they use different loss functions.
-
     A submodel defines an alternate objective to use in cases like this.  It may
     optionally specify any of the following: a subset of layers in the model to
     train; a different loss function; and a different optimizer to use.  This
     method creates a submodel, which you can then pass to fit() to use it for
     training.
-
     Parameters
     ----------
     layers: list
@@ -789,7 +766,6 @@ class TensorGraph(Model):
     optimizer: Optimizer
       the optimizer to use for training.  If None, the model's main optimizer
       will be used.
-
     Returns
     -------
     the newly created submodel, which can be passed to any of the fitting
@@ -937,7 +913,6 @@ class TensorGraph(Model):
 
   def _get_tf(self, obj):
     """Fetches underlying TensorFlow primitives.
-
     Parameters
     ----------
     obj: str
@@ -948,7 +923,6 @@ class TensorGraph(Model):
     Returns
     -------
     TensorFlow Object
-
     """
 
     if obj in self.tensor_objects and self.tensor_objects[obj] is not None:
@@ -979,11 +953,9 @@ class TensorGraph(Model):
 
   def save_checkpoint(self, max_checkpoints_to_keep=5):
     """Save a checkpoint to disk.
-
     Usually you do not need to call this method, since fit() saves checkpoints
     automatically.  If you have disabled automatic checkpointing during fitting,
     this can be called to manually write checkpoints.
-
     Parameters
     ----------
     max_checkpoints_to_keep: int
@@ -1000,7 +972,6 @@ class TensorGraph(Model):
 
   def restore(self, checkpoint=None):
     """Reload the values of all variables from a checkpoint file.
-
     Parameters
     ----------
     checkpoint: str
@@ -1054,7 +1025,6 @@ class TensorGraph(Model):
 
   def _create_feed_dicts(self, generator, training):
     """Create feed dicts for use in fitting or prediction.
-
     Parameters
     ----------
     generator: Generator
@@ -1083,10 +1053,8 @@ class TensorGraph(Model):
 
   def _run_graph(self, outputs, feed_dict, training):
     """Run the calculations in the graph to compute some outputs.
-
     In graph mode, this just calls session.run().  In eager mode, it executes
     all required layers to compute the output.
-
     Parameters
     ----------
     outputs: list of Layers
@@ -1118,16 +1086,13 @@ class TensorGraph(Model):
                      model_dir=None,
                      config=None):
     """Construct a Tensorflow Estimator from this model.
-
     tf.estimator.Estimator is the standard Tensorflow API for representing models.
     This method provides interoperability between DeepChem and other Tensorflow
     based tools by allowing any model to be used an Estimator.
-
     Once this method returns, the Estimator it created is independent of the model
     it was created from.  They do not share tensors, variables, save files, or any
     other resources.  The Estimator is a self contained object with its own methods
     for training, evaluation, prediction, checkpointing, etc.
-
     Parameters
     ----------
     feature_columns: list of tf.feature_column objects
@@ -1233,13 +1198,11 @@ class TensorGraph(Model):
   def create_estimator_inputs(self, feature_columns, weight_column, features,
                               labels, mode):
     """This is called by make_estimator() to create tensors for the inputs.
-
     feature_columns and weight_column are the arguments passed to
     make_estimator().  features, labels, and mode are the arguments passed to
     the estimator's model function.  This method creates and returns a dict with
     one entry for every Feature, Label, or Weights layer in the graph.  The keys
     are the layers, and the values are the tensors that correspond to them.
-
     Any subclass that overrides default_generator() must also override this
     method.
     """
@@ -1285,10 +1248,8 @@ def _enqueue_batch(tg, generator, graph, sess, n_enqueued, final_sample):
   dataset
   graph
   sess
-
   Returns
   -------
-
   """
   with graph.as_default():
     num_samples = 0
@@ -1310,7 +1271,6 @@ def _enqueue_batch(tg, generator, graph, sess, n_enqueued, final_sample):
 
 class TFWrapper(object):
   """This class exists as a workaround for Tensorflow objects not being picklable.
-
   The job of a TFWrapper is to create Tensorflow objects by passing defined arguments
   to a constructor.  There are cases where we really want to store Tensorflow objects
   of various sorts (optimizers, initializers, etc.), but we can't because they cannot
@@ -1319,7 +1279,6 @@ class TFWrapper(object):
 
   def __init__(self, tf_class, **kwargs):
     """Create a TFWrapper for constructing a Tensorflow object.
-
     Parameters
     ----------
     tf_class: class
@@ -1339,7 +1298,6 @@ class Submodel(object):
 
   def __init__(self, graph, layers, loss, optimizer):
     """Create a submodel.
-
     In normal use, you should call create_submodel() on the TensorGraph instead
     of using this constructor directly."""
     self.graph = graph

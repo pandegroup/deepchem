@@ -199,7 +199,7 @@ class Layer(object):
     layer, complete with trained values for its variables."""
     self.variable_values = values
 
-  def set_summary(self, summary_op, summary_description=None, collections=None):
+  def set_summary(self, summary_op, include_variables=True, summary_description=None, collections=None):
     """Annotates a tensor with a tf.summary operation
 
     This causes self.out_tensor to be logged to Tensorboard.
@@ -208,6 +208,8 @@ class Layer(object):
     ----------
     summary_op: str
       summary operation to annotate node
+    include_variables: bool
+      Optional bool to include layer variables to summary
     summary_description: object, optional
       Optional summary_pb2.SummaryDescription()
     collections: list of graph collections keys, optional
@@ -219,11 +221,12 @@ class Layer(object):
           "Invalid summary_op arg. Only 'tensor_summary', 'scalar', 'histogram' supported"
       )
     self.summary_op = summary_op
+    self.include_variables = include_variables
     self.summary_description = summary_description
     self.collections = collections
     self.tensorboard = True
 
-  def add_summary_to_tg(self, tb_input=None):
+  def add_summary_to_tg(self, layer_vars):
     """
     Create the summary operation for this layer, if set_summary() has been called on it.
 
@@ -231,20 +234,31 @@ class Layer(object):
 
     Parameters
     ----------
-    tb_input: tensor
-      the tensor to log to Tensorboard.  If None, self.out_tensor is used.
+    layer_vars: list of variables
+      the list of variables to log to Tensorboard.
     """
     if self.tensorboard == False:
       return
-    if tb_input == None:
-      tb_input = self.out_tensor
+    
     if self.summary_op == "tensor_summary":
-      tf.summary.tensor_summary(self.name, tb_input, self.summary_description,
+      tf.summary.tensor_summary(self.name, self.out_tensor, self.summary_description,
                                 self.collections)
+      if self.include_variables:
+        for var in layer_vars:
+          tf.summary.tensor_summary(var.name, var, self.summary_description,
+                                   self.collections)
+          
     elif self.summary_op == 'scalar':
-      tf.summary.scalar(self.name, tb_input, self.collections)
+      tf.summary.scalar(self.name, self.out_tensor, self.collections)
+      if self.include_variables:
+        for var in layer_vars:
+          tf.summary.scalar(var.name, var, self.collections)
+          
     elif self.summary_op == 'histogram':
-      tf.summary.histogram(self.name, tb_input, self.collections)
+      tf.summary.histogram(self.name, self.out_tensor, self.collections)
+      if self.include_variables:
+        for var in layer_vars:
+          tf.summary.histogram(var.name, var, self.collections)
 
   def copy(self, replacements={}, variables_graph=None, shared=False):
     """Duplicate this Layer and all its inputs.
@@ -2542,13 +2556,13 @@ class GraphConv(Layer):
   def _create_variables(self, in_channels):
     # Generate the nb_affine weights and biases
     W_list = [
-        initializations.glorot_uniform([in_channels, self.out_channel])
+        initializations.glorot_uniform([in_channels, self.out_channel], name='kernel')
         for k in range(self.num_deg)
     ]
     b_list = [
         model_ops.zeros(shape=[
             self.out_channel,
-        ]) for k in range(self.num_deg)
+        ], name='bias') for k in range(self.num_deg)
     ]
     return (W_list, b_list)
 
