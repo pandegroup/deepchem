@@ -23,7 +23,7 @@ else
 fi
 
 yes | pip install --upgrade pip
-conda install -y -q -c deepchem -c rdkit -c conda-forge -c omnia \
+conda install -y -q --override-channels -c deepchem -c rdkit -c conda-forge -c omnia \
     mdtraj \
     pdbfixer \
     rdkit \
