@@ -124,14 +124,3 @@ class MultitaskIRVClassifier(KerasModel):
         SigmoidCrossEntropy(),
         output_types=['prediction', 'loss'],
         **kwargs)
-
-
-class TensorflowMultitaskIRVClassifier(MultitaskIRVClassifier):
-
-  def __init__(self, *args, **kwargs):
-
-    warnings.warn(
-        "TensorflowMultitaskIRVClassifier is deprecated and has been renamed to MultitaskIRVClassifier",
-        FutureWarning)
-
-    super(TensorflowMultitaskIRVClassifier, self).__init__(*args, **kwargs)

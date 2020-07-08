@@ -1,9 +1,5 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 """
-Created on Tue Mar  7 00:07:10 2017
-
-@author: zqwu
+This file holds the current best set of hyperparameters for the Molnet benchmark.
 """
 import deepchem
 

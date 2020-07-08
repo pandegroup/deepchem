@@ -15,3 +15,4 @@ import deepchem.utils
 import deepchem.dock
 import deepchem.molnet
 import deepchem.rl
+import deepchem.applications

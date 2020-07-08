@@ -429,7 +429,7 @@ class TestOverfit(test_util.TensorFlowTestCase):
     dataset_trans = IRV_transformer.transform(dataset)
     classification_metric = dc.metrics.Metric(
         dc.metrics.accuracy_score, task_averager=np.mean)
-    model = dc.models.MultitaskIRVClassifier(
+    model = dc.models.TensorflowMultitaskIRVClassifier(
         n_tasks, K=5, learning_rate=0.01, batch_size=n_samples)
 
     # Fit trained model

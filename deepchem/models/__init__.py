@@ -11,7 +11,7 @@ from deepchem.models.callbacks import ValidationCallback
 from deepchem.models.fcnet import MultitaskRegressor
 from deepchem.models.fcnet import MultitaskClassifier
 from deepchem.models.fcnet import MultitaskFitTransformRegressor
-from deepchem.models.IRV import MultitaskIRVClassifier
+from deepchem.models.IRV import TensorflowMultitaskIRVClassifier
 from deepchem.models.robust_multitask import RobustMultitaskClassifier
 from deepchem.models.robust_multitask import RobustMultitaskRegressor
 from deepchem.models.progressive_multitask import ProgressiveMultitaskRegressor, ProgressiveMultitaskClassifier
@@ -29,4 +29,3 @@ from deepchem.models.chemnet_models import Smiles2Vec, ChemCeption
 
 from deepchem.models.text_cnn import TextCNNTensorGraph
 from deepchem.models.graph_models import WeaveTensorGraph, DTNNTensorGraph, DAGTensorGraph, GraphConvTensorGraph, MPNNTensorGraph
-from deepchem.models.IRV import TensorflowMultitaskIRVClassifier
