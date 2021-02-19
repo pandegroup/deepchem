@@ -134,23 +134,25 @@ class NeighborListComplexAtomicCoordinates(ComplexFeaturizer):
     return (system_coords, system_neighbor_list)
 
 
-class ComplexNeighborListFragmentAtomicCoordinates(ComplexFeaturizer):
+class AtomicConvFeaturizer(ComplexFeaturizer):
   """This class computes the featurization that corresponds to AtomicConvModel.
 
-  This class computes featurizations needed for AtomicConvModel. Given a
-  two molecular structures, it computes a number of useful geometric
-  features. In particular, for each molecule and the global complex, it
-  computes a coordinates matrix of size (N_atoms, 3) where N_atoms is the
-  number of atoms. It also computes a neighbor-list, a dictionary with
-  N_atoms elements where neighbor-list[i] is a list of the atoms the i-th
-  atom has as neighbors. In addition, it computes a z-matrix for the
-  molecule which is an array of shape (N_atoms,) that contains the atomic
+  This class computes featurizations needed for AtomicConvModel.
+  Given a two molecular structures, it computes a number of useful
+  geometric features. In particular, for each molecule and the global
+  complex, it computes a coordinates matrix of size (N_atoms, 3)
+  where N_atoms is the number of atoms. It also computes a
+  neighbor-list, a dictionary with N_atoms elements where
+  neighbor-list[i] is a list of the atoms the i-th atom has as
+  neighbors. In addition, it computes a z-matrix for the molecule
+  which is an array of shape (N_atoms,) that contains the atomic
   number of that atom.
 
-  Since the featurization computes these three quantities for each of the
-  two molecules and the complex, a total of 9 quantities are returned for
-  each complex. Note that for efficiency, fragments of the molecules can be
-  provided rather than the full molecules themselves.
+  Since the featurization computes these three quantities for each of
+  the two molecules and the complex, a total of 9 quantities are
+  returned for each complex. Note that for efficiency, fragments of
+  the molecules can be provided rather than the full molecules
+  themselves.
   """
 
   def __init__(self,
@@ -160,6 +162,25 @@ class ComplexNeighborListFragmentAtomicCoordinates(ComplexFeaturizer):
                max_num_neighbors,
                neighbor_cutoff,
                strip_hydrogens=True):
+    """
+
+    Parameters
+    ----------
+    frag1_num_atoms: int
+      Maximum number of atoms in fragment 1.
+    frag2_num_atoms: int
+      Maximum number of atoms in fragment 2.
+    complex_num_atoms: int
+      Maximum number of atoms in complex of frag1/frag2 together.
+    max_num_neighbors: int
+      Maximum number of atoms considered as neighbors.
+    neighbor_cutoff: float
+      Maximum distance (angstroms) for two atoms to be considered as
+      neighbors. If more than `max_num_neighbors` atoms fall within
+      this cutoff, the closest `max_num_neighbors` will be used.
+    strip_hydrogens: bool (default True)
+      Remove hydrogens before computing featurization.
+    """
     self.frag1_num_atoms = frag1_num_atoms
     self.frag2_num_atoms = frag2_num_atoms
     self.complex_num_atoms = complex_num_atoms
@@ -253,3 +274,21 @@ class ComplexNeighborListFragmentAtomicCoordinates(ComplexFeaturizer):
     mol = MoleculeShim(atomic_numbers)
     coords = coords[indexes_to_keep]
     return coords, mol
+
+
+#################### Deprecation warnings for old atomic conv featurizer name ####################
+
+ATOMICCONV_DEPRECATION = "{} is deprecated and has been renamed to {} and will be removed in DeepChem 3.0."
+
+
+class ComplexNeighborListFragmentAtomicCoordinates(AtomicConvFeaturizer):
+
+  def __init__(self, *args, **kwargs):
+
+    warnings.warn(
+        ATOMICCONV_DEPRECATION.format(
+            "ComplexNeighorListFragmentAtomicCoordinates",
+            "AtomicConvFeaturizer"), FutureWarning)
+
+    super(ComplexNeighborListFragmentAtomicCoordinates, self).__init__(
+        *args, **kwargs)
