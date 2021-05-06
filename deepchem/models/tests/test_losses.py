@@ -99,6 +99,25 @@ class TestLosses(unittest.TestCase):
     assert np.allclose(expected, result)
 
   @unittest.skipIf(not has_tensorflow, 'TensorFlow is not installed')
+  def test_squared_hinge_loss_tf(self):
+    """Test SquaredHingeLoss."""
+    loss = losses.SquaredHingeLoss()
+    outputs = tf.constant([[0.1, 0.8], [0.4, 0.6]])
+    labels = tf.constant([[1.0, -1.0], [-1.0, 1.0]])
+    result = loss._compute_tf_loss(outputs, labels).numpy()
+    expected = [np.mean([0.8100, 3.2400]), np.mean([1.9600, 0.1600])]
+    assert np.allclose(expected, result)
+
+  @unittest.skipIf(not has_pytorch, 'PyTorch is not installed')
+  def test_squared_hinge_loss_pytorch(self):
+    """Test SquaredHingeLoss."""
+    loss = losses.SquaredHingeLoss()
+    outputs = torch.tensor([[0.1, 0.8], [0.4, 0.6]])
+    labels = torch.tensor([[1.0, -1.0], [-1.0, 1.0]])
+    result = loss._create_pytorch_loss()(outputs, labels).numpy()
+    expected = [np.mean([0.8100, 3.2400]), np.mean([1.9600, 0.1600])]
+    assert np.allclose(expected, result)
+
   def test_poisson_loss_tf(self):
     """Test PoissonLoss."""
     loss = losses.PoissonLoss()

@@ -94,6 +94,31 @@ class HingeLoss(Loss):
     return loss
 
 
+class SquaredHingeLoss(Loss):
+  """The Squared Hinge loss function.
+  
+  Defined as the square of the hinge loss between y_true and y_pred. The Squared Hinge Loss is differentiable.
+  """
+
+  def _compute_tf_loss(self, output, labels):
+    import tensorflow as tf
+    output, labels = _make_tf_shapes_consistent(output, labels)
+    return tf.keras.losses.SquaredHinge(reduction='none')(labels, output)
+
+  def _create_pytorch_loss(self):
+    import torch
+
+    def loss(output, labels):
+      output, labels = _make_pytorch_shapes_consistent(output, labels)
+      return torch.mean(
+          torch.pow(
+              torch.maximum(1 - torch.multiply(labels, output),
+                            torch.tensor(0)), 2),
+          dim=-1)
+
+    return loss
+
+
 class PoissonLoss(Loss):
   """The Poisson loss function is defined as the mean of the elements of y_pred - (y_true * log(y_pred) for an input of (y_true, y_pred).
   Poisson loss is generally used for regression tasks where the data follows the poisson
