@@ -39,14 +39,15 @@ def get_xyz_from_mol(mol):
   -------
   Numpy ndarray of shape `(N, 3)` where `N = mol.GetNumAtoms()`.
   """
-  xyz = np.zeros((mol.GetNumAtoms(), 3))
-  conf = mol.GetConformer()
-  for i in range(conf.GetNumAtoms()):
-    position = conf.GetAtomPosition(i)
-    xyz[i, 0] = position.x
-    xyz[i, 1] = position.y
-    xyz[i, 2] = position.z
-  return (xyz)
+  return mol.GetConformer().GetPosition()
+#   xyz = np.zeros((mol.GetNumAtoms(), 3))
+#   conf = mol.GetConformer()
+#   for i in range(conf.GetNumAtoms()):
+#     position = conf.GetAtomPosition(i)
+#     xyz[i, 0] = position.x
+#     xyz[i, 1] = position.y
+#     xyz[i, 2] = position.z
+#   return (xyz)
 
 
 def add_hydrogens_to_mol(mol, is_protein=False):
