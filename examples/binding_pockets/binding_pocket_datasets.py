@@ -2,14 +2,9 @@
 PDBBind binding pocket dataset loader.
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-
 import os
 import numpy as np
 import pandas as pd
-import shutil
 import time
 import re
 from rdkit import Chem
@@ -23,7 +18,7 @@ def compute_binding_pocket_features(pocket_featurizer, ligand_featurizer,
   ligand_mol2 = os.path.join(pdb_subdir, "%s_ligand.mol2" % pdb_code)
 
   # Extract active site
-  active_site_box, active_site_atoms, active_site_coords = (
+  active_site_box, active_site_atoms = (
       dc.dock.binding_pocket.extract_active_site(
           protein_file, ligand_file))
 
@@ -37,13 +32,13 @@ def compute_binding_pocket_features(pocket_featurizer, ligand_featurizer,
 
   # Featurize pocket
   finder = dc.dock.ConvexHullPocketFinder()
-  pockets, pocket_atoms, pocket_coords = finder.find_pockets(protein_file, ligand_file)
+  pockets = finder.find_pockets(protein_file)
   n_pockets = len(pockets)
   n_pocket_features = dc.feat.BindingPocketFeaturizer.n_features
 
   features = np.zeros((n_pockets, n_pocket_features+n_ligand_features))
   pocket_features = pocket_featurizer.featurize(
-      protein_file, pockets, pocket_atoms, pocket_coords)
+      protein_file, pockets)
   # Note broadcast operation
   features[:, :n_pocket_features] = pocket_features
   features[:, n_pocket_features:] = ligand_features
@@ -92,7 +87,7 @@ def featurize_pdbbind_pockets(data_dir=None, subset="core"):
   data_dir = os.path.join(current_dir, "%s_pockets" % (subset))
   if os.path.exists(data_dir):
     return dc.data.DiskDataset(data_dir), tasks
-  pdbbind_dir = os.path.join(current_dir, "../pdbbind/v2015")
+  pdbbind_dir = os.path.join(current_dir, "../../v2015")
 
   # Load PDBBind dataset
   if subset == "core":
@@ -105,7 +100,7 @@ def featurize_pdbbind_pockets(data_dir=None, subset="core"):
     raise ValueError("Only core, refined, and full subsets supported.")
   print("About to load contents.")
   if not os.path.exists(labels_file):
-    raise ValueError("Run ../pdbbind/get_pdbbind.sh to download dataset.")
+    raise ValueError("Run ../pdbbind/get_pdbbind.sh to download dataset, or check the path")
   contents_df = load_pdbbind_labels(labels_file)
   ids = contents_df["PDB code"].values
   y = np.array([float(val) for val in contents_df["-logKd/Ki"].values])

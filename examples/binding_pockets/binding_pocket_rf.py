@@ -1,9 +1,6 @@
 """
 Script that trains Sklearn RF models on PDBbind Pockets dataset.
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
 
 __author__ = "Bharath Ramsundar"
 __copyright__ = "Copyright 2017, Stanford University"
@@ -14,7 +11,7 @@ import deepchem as dc
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from binding_pocket_datasets import load_pdbbind_pockets
-
+# from .binding_pocket_datasets import load_pdbbind_pockets
 # For stable runs
 np.random.seed(123)
 

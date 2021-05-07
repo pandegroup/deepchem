@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def extract_active_site(protein_file: str,
                         ligand_file: str,
                         cutoff: float = 4.0
-                       ) -> Tuple[CoordinateBox, np.ndarray]:
+                      ) -> Tuple[CoordinateBox, np.ndarray]:
   """Extracts a box for the active site.
 
   Parameters

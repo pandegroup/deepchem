@@ -103,3 +103,7 @@ datasets/qm8.csv
 .vscode/
 env.yml
 .python-version
+
+# pdbbind dataset
+pdbbind_v2015.tar.gz
+v2015/
