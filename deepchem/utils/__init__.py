@@ -92,3 +92,22 @@ from deepchem.utils.docking_utils import prepare_inputs
 from deepchem.utils.voxel_utils import convert_atom_to_voxel
 from deepchem.utils.voxel_utils import convert_atom_pair_to_voxel
 from deepchem.utils.voxel_utils import voxelize
+
+from deepchem.utils.protein_sequence_feature_utils import read_a3m_as_mat
+from deepchem.utils.protein_sequence_feature_utils import sequence_one_hot_encoding
+from deepchem.utils.protein_sequence_feature_utils import sequence_deletion_probability
+from deepchem.utils.protein_sequence_feature_utils import sequence_weights
+from deepchem.utils.protein_sequence_feature_utils import sequence_profile
+from deepchem.utils.protein_sequence_feature_utils import sequence_profile_no_gap
+from deepchem.utils.protein_sequence_feature_utils import sequence_profile_with_prior
+from deepchem.utils.protein_sequence_feature_utils import sequence_identity
+from deepchem.utils.protein_sequence_feature_utils import sequence_static_prop
+from deepchem.utils.protein_sequence_feature_utils import sequence_gap_matrix
+from deepchem.utils.protein_sequence_feature_utils import profile_combinatorial
+from deepchem.utils.protein_sequence_feature_utils import mutual_information
+from deepchem.utils.protein_sequence_feature_utils import mean_contact_potential
+
+from deepchem.utils.protein_sequence_data_utils import read_fasta
+from deepchem.utils.protein_sequence_data_utils import write_fasta
+from deepchem.utils.protein_sequence_data_utils import read_hhm
+from deepchem.utils.protein_sequence_data_utils import run_hhblits_local
