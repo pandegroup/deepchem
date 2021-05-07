@@ -11,9 +11,8 @@ __license__ = "MIT"
 import warnings
 import numpy as np
 import tensorflow as tf
-from deepchem.nn.copy import Input
+# from deepchem.nn.copy import Input
 from deepchem.feat.mol_graphs import ConvMol
-
 
 def merge_two_dicts(x, y):
   z = x.copy()
@@ -59,25 +58,33 @@ class GraphTopology(object):
     self.max_deg = max_deg
     self.min_deg = min_deg
 
-    self.atom_features_placeholder = tensor = tf.placeholder(
-        dtype='float32',
-        shape=(None, self.n_feat),
-        name=self.name + '_atom_features')
+    self.atom_features_placeholder = tf.keras.Input(
+      name=self.name + '_atom_features', 
+      shape=(None, self.n_feat), 
+      dtype=tf.dtypes.float32
+    )
+
     self.deg_adj_lists_placeholders = [
-        tf.placeholder(
-            dtype='int32',
-            shape=(None, deg),
-            name=self.name + '_deg_adj' + str(deg))
-        for deg in range(1, self.max_deg + 1)
+      tf.keras.Input(
+        dtype='int32',
+        shape=(None, deg),
+        name=self.name + '_deg_adj' + str(deg)
+      )
+      for deg in range (1, self.max_deg + 1)
     ]
-    self.deg_slice_placeholder = tf.placeholder(
+
+    self.deg_slice_placeholder = tf.keras.Input(
         dtype='int32',
         shape=(self.max_deg - self.min_deg + 1, 2),
-        name=self.name + '_deg_slice')
-    self.membership_placeholder = tf.placeholder(
-        dtype='int32', shape=(None,), name=self.name + '_membership')
-
-    # Define the list of tensors to be used as topology
+        name=self.name + '_deg_slice'
+    )
+    
+    self.membership_placeholder = tf.keras.Input(
+        dtype='int32', 
+        shape=(None,), 
+        name=self.name + '_membership'
+    )
+    
     self.topology = [self.deg_slice_placeholder, self.membership_placeholder]
     self.topology += self.deg_adj_lists_placeholders
 
