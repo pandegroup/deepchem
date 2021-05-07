@@ -15,6 +15,7 @@ from deepchem.models.models import Model
 from deepchem.models.optimizers import Adam, Optimizer, LearningRateSchedule
 from deepchem.trans import Transformer, undo_transforms
 from deepchem.utils.evaluate import GeneratorEvaluator
+from deepchem.utils.openvino_model import OpenVINOModel
 
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from deepchem.utils.typing import ArrayLike, LossFn, OneOrMany
@@ -225,6 +226,11 @@ class KerasModel(Model):
     self._training_ops_built = False
     self._output_functions: Dict[Any, Any] = {}
     self._gradient_fn_for_vars: Dict[Any, Any] = {}
+
+    self._use_openvino = kwargs.get('use_openvino', False)
+    if self._use_openvino:
+      self._openvino_model = OpenVINOModel(
+          self.model_dir, self.batch_size, keras_model=self)
 
   def _ensure_built(self) -> None:
     """The first time this is called, create internal data structures."""
@@ -595,6 +601,10 @@ class KerasModel(Model):
       )
     if tf.is_tensor(outputs):
       outputs = [outputs]
+
+    if self._use_openvino:
+      openvino_predictions, generator = self._openvino_model(generator)
+
     for batch in generator:
       inputs, labels, weights = batch
       self._create_inputs(inputs)
@@ -611,10 +621,14 @@ class KerasModel(Model):
               self.model.inputs, outputs)
         output_values = self._output_functions[key](inputs)
       else:
-        output_values = self._compute_model(inputs)
-        if tf.is_tensor(output_values):
+        if self._use_openvino:
+          output_values = next(openvino_predictions)
           output_values = [output_values]
-        output_values = [t.numpy() for t in output_values]
+        else:
+          output_values = self._compute_model(inputs)
+          if tf.is_tensor(output_values):
+            output_values = [output_values]
+          output_values = [t.numpy() for t in output_values]
 
       # Apply tranformers and record results.
       if uncertainty:

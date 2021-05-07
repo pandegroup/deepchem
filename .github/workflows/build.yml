@@ -40,6 +40,10 @@ jobs:
         key: ${{ matrix.os }}-pip-${{ hashFiles('env.*.yml') }}
         restore-keys: |
           ${{ runner.os }}-pip-
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
     - name: Install miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -65,6 +69,7 @@ jobs:
         python -c 'import rdkit; print(rdkit.__version__)'
         python -c 'import torch; print(torch.__version__)'
         python -c 'import tensorflow; print(tensorflow.__version__)'
+        python -c 'import openvino.inference_engine as ie; print(ie.__version__)'
 
   powershell-build:
     runs-on: windows-latest
@@ -104,3 +109,4 @@ jobs:
         python -c 'import rdkit; print(rdkit.__version__)'
         python -c 'import torch; print(torch.__version__)'
         python -c 'import tensorflow; print(tensorflow.__version__)'
+        python -c 'import openvino.inference_engine as ie; print(ie.__version__)'
