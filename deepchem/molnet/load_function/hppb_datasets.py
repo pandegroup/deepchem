@@ -6,6 +6,7 @@ import deepchem as dc
 from deepchem.molnet.load_function.molnet_loader import TransformerGenerator, _MolnetLoader
 from deepchem.data import Dataset
 from typing import List, Optional, Tuple, Union
+import numpy as np
 
 HPPB_URL = "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/hppb.csv"
 HPPB_TASKS = ["target"]  #Task is solubility in pH 7.4 buffer
@@ -18,7 +19,7 @@ def remove_missing_entries(dataset):
   feature vectors. Get rid of them.
   """
   for i, (X, y, w, ids) in enumerate(dataset.itershards()):
-    available_rows = X.any(axis=1)
+    available_rows = np.any(X, axis=1, out=np.zeros(X.shape[0], dtype=bool))
     X = X[available_rows]
     y = y[available_rows]
     w = w[available_rows]

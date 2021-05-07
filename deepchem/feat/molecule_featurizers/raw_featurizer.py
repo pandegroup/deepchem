@@ -45,6 +45,6 @@ class RawFeaturizer(MolecularFeaturizer):
       raise ImportError("This class requires RDKit to be installed.")
 
     if self.smiles:
-      return Chem.MolToSmiles(mol)
+      return [Chem.MolToSmiles(mol)]
     else:
-      return mol
+      return [mol]
