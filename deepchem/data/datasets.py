@@ -752,6 +752,21 @@ class NumpyDataset(Dataset):
     """Get the number of elements in the dataset."""
     return len(self._y)
 
+  def __getitem__(self,
+                  index: Union[int, slice]) -> Union[Tuple, Iterator[Batch]]:
+    """Implements indexing for this object."""
+    if isinstance(index, int):
+      if index < 0 or index >= len(self):
+        raise IndexError("Index %d is out of bounds" % index)
+      return (self._X[index], self._y[index], self._w[index], self._ids[index])
+    else:
+      if index.step is not None:
+        indices = range(index.start, index.stop, index.step)
+      else:
+        indices = range(index.start, index.stop)
+      return (
+          (self._X[i], self._y[i], self._w[i], self._ids[i]) for i in indices)
+
   def get_shape(self) -> Tuple[Shape, Shape, Shape, Shape]:
     """Get the shape of the dataset.
 
@@ -1049,7 +1064,7 @@ class DiskDataset(Dataset):
 
   On disk, a `DiskDataset` has a simple structure. All files for a given
   `DiskDataset` are stored in a `data_dir`. The contents of `data_dir` should
-  be laid out as follows:
+  be laid out as follows::
 
   | data_dir/
   |   |
@@ -1670,6 +1685,55 @@ class DiskDataset(Dataset):
           cur_shard += 1
 
     return iterate(self, batch_size, epochs)
+
+  def _get_shard_for_index(self, index: int) -> Tuple[int, int]:
+    """Get the shard and shard index for a particular datapoint."""
+    if self.legacy_metadata:
+      raise ValueError(
+          "Indexing not supported for legacy metadata. Please convert metadata by calling self.reshard()"
+      )
+    if index < 0 or index >= len(self):
+      raise IndexError("Index %d is out of bounds" % index)
+    start = 0
+    for ind, row in self.metadata_df.iterrows():
+      if row['ids_shape'] is not None:
+        shard_ids_shape = make_tuple(str(row['ids_shape']))
+      else:
+        continue
+      if len(shard_ids_shape) == 0:
+        end = start
+      else:
+        end = start + shard_ids_shape[0]
+      if index >= start and index < end:
+        return (ind, index - start)
+      start = end
+    # We shouldn't get here
+    raise ValueError("Malformed metadata detected.")
+
+  def __getitem__(self,
+                  index: Union[int, slice]) -> Union[Tuple, Iterator[Batch]]:
+    """Implements indexing for this object."""
+    if isinstance(index, int):
+      if index < 0 or index >= len(self):
+        raise IndexError("Index %d is out of bounds" % index)
+      shard_num, index_in_shard = self._get_shard_for_index(index)
+      (X_shard, y_shard, w_shard, ids_shard) = self.get_shard(shard_num)
+      return (X_shard[index_in_shard], y_shard[index_in_shard],
+              w_shard[index_in_shard], ids_shard[index_in_shard])
+    else:
+      if index.step is not None:
+        indices = range(index.start, index.stop, index.step)
+      else:
+        indices = range(index.start, index.stop)
+      # Caching makes this efficient
+      def iterate():
+        for index in indices:
+          shard_num, index_in_shard = self._get_shard_for_index(index)
+          (X_shard, y_shard, w_shard, ids_shard) = self.get_shard(shard_num)
+          yield (X_shard[index_in_shard], y_shard[index_in_shard],
+                 w_shard[index_in_shard], ids_shard[index_in_shard])
+
+      return iterate()
 
   def itersamples(self) -> Iterator[Batch]:
     """Get an object that iterates over the samples in the dataset.
@@ -2479,12 +2543,29 @@ class DiskDataset(Dataset):
       self._cached_shards = None
 
   def __len__(self) -> int:
-    """Finds number of elements in dataset."""
-    total = 0
-    for _, row in self.metadata_df.iterrows():
-      y = load_from_disk(os.path.join(self.data_dir, row['ids']))
-      total += len(y)
-    return total
+    """
+    Finds number of elements in dataset.
+    """
+    if self.legacy_metadata:
+      total = 0
+      for _, row in self.metadata_df.iterrows():
+        y = load_from_disk(os.path.join(self.data_dir, row['ids']))
+        total += len(y)
+      return total
+    else:
+      total = 0
+      n_rows = len(self.metadata_df.index)
+      for shard_num in range(n_rows):
+        row = self.metadata_df.iloc[shard_num]
+        if row['ids_shape'] is not None:
+          shard_ids_shape = make_tuple(str(row['ids_shape']))
+        else:
+          continue
+        if len(shard_ids_shape) == 0:
+          total += 0
+        else:
+          total += shard_ids_shape[0]
+      return total
 
   def _get_shard_shape(self,
                        shard_num: int) -> Tuple[Shape, Shape, Shape, Shape]:
@@ -2735,9 +2816,30 @@ class ImageDataset(Dataset):
 
     return iterate(self, batch_size, epochs, deterministic, pad_batches)
 
-  def _get_image(self, array: Union[np.ndarray, List[str]],
-                 indices: Union[int, np.ndarray]) -> np.ndarray:
-    """Method for loading an image
+  def __getitem__(self,
+                  index: Union[int, slice]) -> Union[Tuple, Iterator[Batch]]:
+    """Implements indexing for this object."""
+
+    def get_image(array, index):
+      if isinstance(array, np.ndarray):
+        return array[index]
+      return dc.data.ImageLoader.load_img([array[index]])[0]
+
+    if isinstance(index, int):
+      if index < 0 or index >= len(self):
+        raise IndexError("Index %d is out of bounds" % index)
+      return (get_image(self._X, index), get_image(self._y, index),
+              self._w[index], self._ids[index])
+    else:
+      if index.step is not None:
+        indices = range(index.start, index.stop, index.step)
+      else:
+        indices = range(index.start, index.stop)
+      return ((get_image(self._X, i), get_image(self._y, i), self._w[i],
+               self._ids[i]) for i in indices)
+
+  def itersamples(self) -> Iterator[Batch]:
+    """Get an object that iterates over the samples in the dataset.
 
     Parameters
     ----------
