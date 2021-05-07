@@ -230,10 +230,10 @@ class PagtnMolGraphFeaturizer(MolecularFeaturizer):
 
   The featurization is based on `PAGTN model <https://arxiv.org/abs/1905.12712>`_. It is
   slightly more computationally intensive than default Graph Convolution Featuriser, but it
-  builds a Molecular Graph connecting all tom pairs accounting for interactions of atom with
+  builds a Molecular Graph connecting all atom pairs accounting for interactions of an atom with
   every other atom in the Molecule. According to the paper, interactions between two pairs
-  of an atom are dependent on the relative distance between them and calculating the shortest
-  path between them.
+  of atom are dependent on the relative distance between them and and hence, the function needs
+  to calculate the shortest path between them.
 
   The default node representation is constructed by concatenating the following values,
   and the feature length is 94.
@@ -247,9 +247,9 @@ class PagtnMolGraphFeaturizer(MolecularFeaturizer):
     include ``0 - 5``.
   - Aromaticity: Boolean representing if an atom is aromatic.
 
-  The default edge representation are constructed by concatenating the following values,
+  The default edge representation is constructed by concatenating the following values,
   and the feature length is 42. It builds a complete graph where each node is connected to
-  every other node. The edge representations are calculated the shortest path between two nodes
+  every other node. The edge representations are calculated based on the shortest path between two nodes
   (choose any one if multiple exist). Each bond encountered in the shortest path is used to
   calculate edge features.
 
