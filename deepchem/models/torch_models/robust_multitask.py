@@ -248,13 +248,6 @@ class RobustMultitask(nn.Module):
             The activation function class.
         """
         if isinstance(activation_name, str):
-            if isinstance(activation_name, nn.functional):
-                logger.warning(
-                    f"Invalid activation function: {activation_name}. Only activations of type torch.nn.Module (torch.nn.functional activations are not supported yet)"
-                )
-                logger.warning(
-                    "Using default activation function: nn.ReLU() activation")
-
             return getattr(nn, activation_name)
         elif isinstance(activation_name, nn.Module):
             return activation_name
