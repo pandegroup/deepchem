@@ -137,3 +137,54 @@ def test_se3_attention_equivariance():
     assert torch.allclose(out_coords_original, recovered_coords, atol=1e-2)
 
     assert torch.allclose(out_x_original, out_x_rotated, atol=1e-2)
+
+
+@pytest.mark.torch
+def test_se3_transformer_inference():
+    """Test SE(3) Transformer for correct forward pass"""
+    embed_dim, num_heads, num_layers = 64, 4, 3
+    B, N = 1, 10
+
+    from deepchem.models.torch_models import SE3TransformerLayers
+    model = SE3TransformerLayers(embed_dim=embed_dim,
+                                 num_heads=num_heads,
+                                 num_layers=num_layers)
+
+    features = torch.randn(B, N, embed_dim)
+    coords = torch.randn(B, N, 3)
+
+    updated_features, updated_coords = model(features, coords)
+
+    assert updated_features.shape == (B, N, embed_dim)
+    assert updated_coords.shape == (B, N, 3)
+
+
+@pytest.mark.torch
+def test_deepchem_se3_model_fit_and_predict():
+    """Test SE(3)-Transformer model training and prediction with a random dataset."""
+    embed_dim, num_heads, num_layers = 64, 4, 3
+    B, N = 32, 10
+
+    from deepchem.models.torch_models import SE3TransformerModel
+    from deepchem.data import NumpyDataset
+    import deepchem as dc
+
+    metric = dc.metrics.Metric(dc.metrics.pearson_r2_score)
+
+    X = np.random.rand(100, N, embed_dim + 3).astype(np.float32)
+    y = np.random.rand(100, 1).astype(np.float32)
+    w = np.ones((100, 1)).astype(np.float32)
+    train_dataset = NumpyDataset(X=X, y=y, w=w)
+
+    model = SE3TransformerModel(embed_dim=embed_dim,
+                                num_heads=num_heads,
+                                num_layers=num_layers,
+                                batch_size=B)
+
+    model.fit(train_dataset, nb_epoch=200)
+    score = model.evaluate(train_dataset, [metric])
+    preds = model.predict(train_dataset)
+
+    assert score["pearson_r2_score"] > 0.9
+    assert preds.shape == y.shape
+    assert np.allclose(y, preds, atol=0.1)

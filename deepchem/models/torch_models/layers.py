@@ -6674,8 +6674,8 @@ class SphericalHarmonics:
         r = relative_positions.norm(dim=-1, keepdim=True) + 1e-6
         theta = torch.acos(
             torch.clamp(relative_positions[..., 2] / r.squeeze(-1), -1.0, 1.0))
-        phi = torch.atan2(relative_positions[..., 1], relative_positions[...,
-                                                                         0])
+        phi = torch.atan2(relative_positions[..., 1],
+                          torch.clamp(relative_positions[..., 0], min=1e-6))
 
         spherical_harmonics = []
         for l in range(self.max_degree + 1):

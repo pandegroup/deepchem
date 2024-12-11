@@ -618,6 +618,12 @@ InceptionV3Model
 .. autoclass:: deepchem.models.torch_models.InceptionV3Model
   :members:
 
+SE3TransformerModel
+-------------
+
+.. autoclass:: deepchem.models.torch_models.SE3TransformerModel
+  :members:
+
 PyTorch Lightning Models
 ========================
 

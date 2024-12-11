@@ -36,6 +36,7 @@ from deepchem.models.torch_models.graphconvmodel import _GraphConvTorchModel, Gr
 from deepchem.models.torch_models.smiles2vec import Smiles2Vec, Smiles2VecModel
 from deepchem.models.torch_models.inceptionv3 import InceptionV3Model, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux, BasicConv2d
 from deepchem.models.torch_models.robust_multitask import RobustMultitask, RobustMultitaskClassifier, RobustMultitaskRegressor
+from deepchem.models.torch_models.se3_transformer import SE3TransformerLayers, SE3Transformer, SE3TransformerModel
 try:
     from deepchem.models.torch_models.dmpnn import DMPNN, DMPNNModel
     from deepchem.models.torch_models.gnn import GNN, GNNHead, GNNModular
