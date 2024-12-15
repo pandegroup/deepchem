@@ -7,22 +7,54 @@ import deepchem as dc
 
 @pytest.mark.torch
 def test_pinns_overfit():
-    model = torch.nn.Sequential(torch.nn.Linear(1, 64),
-                                torch.nn.Tanh(),
-                                torch.nn.Linear(64, 64),
-                                torch.nn.Tanh(),
+    model = torch.nn.Sequential(torch.nn.Linear(1, 64), torch.nn.Tanh(),
+                                torch.nn.Linear(64, 64), torch.nn.Tanh(),
                                 torch.nn.Linear(64, 1))
-    pinn = PINNModel(model=model,
-                     pde_fn=lambda u, x: torch.zeros_like(u),
-                     boundary_data={
-                         'dirichlet': {
-                             'points': torch.tensor([[0.0], [1.0]], dtype=torch.float32),
-                             'values': torch.tensor([[0.0], [1.0]], dtype=torch.float32)
-                         }
-                     })
-    dataset = dc.data.NumpyDataset(X=torch.tensor([[0.0], [1.0]]), y=torch.tensor([[0.0], [1.0]]))
-    loss = pinn.fit(dataset, nb_epoch=1000)
-    assert loss < 1e-3, f"Model can't overfit"
+    pinn = PINNModel(
+        model=model,
+        pde_fn=lambda u, x: torch.zeros_like(u),
+        boundary_data={
+            'dirichlet': {
+                'points': torch.tensor([[0.0], [1.0]], dtype=torch.float32),
+                'values': torch.tensor([[0.0], [1.0]], dtype=torch.float32)
+            }
+        })
+    dataset = dc.data.NumpyDataset(X=torch.tensor([[0.0], [1.0]]),
+                                   y=torch.tensor([[0.0], [1.0]]))
+    loss = pinn.fit(dataset, nb_epoch=300)
+    assert loss < 1e-3, "Model can't overfit"
+
+
+@pytest.mark.torch
+def test_pinn_default_model():
+    """Test if default model works correctly"""
+    x = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
+    pinn = PINNModel(in_channels=x.shape[1])
+
+    assert pinn.model is not None, "Default model is not initialized"
+    output = pinn.predict(x)
+    assert output is not None, "Error in prediction using default untrained model"
+    assert output.shape[0] == x.shape[0], "Output shape mismatch"
+
+
+@pytest.mark.torch
+def test_pinn_custom_eval():
+    """Test if custom evaluation function works correctly"""
+    model = torch.nn.Linear(1, 1)
+
+    def custom_eval(x):
+        return 2 * model(x)
+
+    pinn = PINNModel(model=model, eval_fn=custom_eval)
+
+    test_dataset = torch.tensor([[1.0]], dtype=torch.float32)
+
+    with torch.no_grad():
+        y_standard = model(test_dataset)
+        y_custom = pinn.predict(test_dataset)
+
+    assert np.abs(y_custom - 2 * y_standard.numpy()) < 1e-6
+
 
 @pytest.mark.torch
 def test_pinn_heat_equation():
@@ -94,7 +126,7 @@ def test_pinn_heat_equation():
                      data_weight=1.0,
                      physics_weight=1.0)
 
-    pinn.fit(dataset, nb_epoch=1000)
+    pinn.fit(dataset, nb_epoch=100)
 
     x_test = torch.linspace(0, 1, 100).reshape(-1, 1)
     with torch.no_grad():
@@ -120,22 +152,3 @@ def test_pinn_heat_equation():
 
     print(f"PDE residual error: {pde_error.item()}")
     assert pde_error < 1e-2, "PDE residuals are too high"
-
-
-@pytest.mark.torch
-def test_pinn_custom_eval():
-    """Test if custom evaluation function works correctly"""
-    model = torch.nn.Linear(1, 1)
-
-    def custom_eval(x):
-        return 2 * model(x)
-
-    pinn = PINNModel(model=model, eval_fn=custom_eval)
-
-    test_dataset = torch.tensor([[1.0]], dtype=torch.float32)
-
-    with torch.no_grad():
-        y_standard = model(test_dataset)
-        y_custom = pinn.predict(test_dataset)
-
-    assert np.abs(y_custom - 2 * y_standard.numpy()) < 1e-6

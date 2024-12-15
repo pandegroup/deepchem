@@ -7,6 +7,21 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class NeuralNet(nn.Module):
+    """A simple neural network that will be used by the PINNModel when no default model is provided.
+    """
+
+    def __init__(self, in_channels: int = 1):
+        super(NeuralNet, self).__init__()
+        self.net = nn.Sequential(nn.Linear(in_channels, 64), nn.Tanh(),
+                                 nn.Linear(64, 64), nn.Tanh(), nn.Linear(64, 1))
+
+    def forward(self, x):
+        if not isinstance(x, torch.Tensor):
+            x = torch.tensor(x, dtype=torch.float32)
+        return self.net(x)
+
+
 class PINNModel(TorchModel):
     """Physics-Informed Neural Network Model implemented in PyTorch.
     This model combines standard neural network training with physics-informed
@@ -14,15 +29,16 @@ class PINNModel(TorchModel):
     """
 
     def __init__(self,
-                 model: nn.Module,
-                 loss_fn: Callable = nn.functional.mse_loss,
+                 model: Optional[nn.Module] = None,
+                 in_channels: Optional[int] = None,
+                 loss_fn: Union[Callable, nn.Module] = nn.MSELoss(),
+                 data_weight: float = 1.0,
+                 boundary_data: Dict = {},
                  pde_fn: Union[List,
                                Callable] = [lambda u, x: torch.zeros_like(u)],
                  pde_weights: Union[List, float] = [1.0],
-                 boundary_data: Dict = {},
-                 eval_fn: Optional[Callable] = None,
-                 data_weight: float = 1.0,
                  physics_weight: float = 1.0,
+                 eval_fn: Optional[Callable] = None,
                  **kwargs) -> None:
         """Initialize PINNModel.
 
@@ -49,21 +65,28 @@ class PINNModel(TorchModel):
             Additional arguments to pass to TorchModel
         """
 
+        if model is None:
+            if in_channels is not None:
+                model = NeuralNet(in_channels=in_channels)
+            else:
+                model = NeuralNet(in_channels=1)
+
         if not isinstance(pde_fn, list):
             pde_fn = [pde_fn]
         if not isinstance(pde_weights, list):
             pde_weights = [pde_weights] * len(pde_fn)
 
-        loss = self._loss_fn
-        super(PINNModel, self).__init__(model=model, loss=loss, **kwargs)
-
         self.loss_fn = loss_fn
-        self.pde_fn = pde_fn
+        self.pde_fn = [pde_fn] if not isinstance(pde_fn, list) else pde_fn
         self.boundary_data = boundary_data
         self.eval_fn = eval_fn or self._default_eval_fn
         self.data_weight = data_weight
         self.physics_weight = physics_weight
-        self.pde_weights = pde_weights
+        self.pde_weights = ([pde_weights] * len(self.pde_fn) if
+                            not isinstance(pde_weights, list) else pde_weights)
+        super(PINNModel, self).__init__(model=model,
+                                        loss=self._loss_fn,
+                                        **kwargs)
 
     def _compute_pde_loss(self, x: torch.Tensor) -> torch.Tensor:
         """Compute the physics-informed loss using PDE residuals.
@@ -87,7 +110,7 @@ class PINNModel(TorchModel):
         return residual_loss
 
     def _compute_boundary_loss(self) -> torch.Tensor:
-        """Compute loss at boundary points for Dirichlet and Neumann conditions.
+        """Compute loss at boundary points for Dirichlet, Neumann and Robin conditions.
 
         Returns
         -------
@@ -102,17 +125,32 @@ class PINNModel(TorchModel):
             if isinstance(value, dict):
                 points = value.get('points')
                 values = value.get('values')
+                alpha = value.get('alpha', 1.0)
+                beta = value.get('beta', 1.0)
                 if points is not None and values is not None:
                     pred = self.model(points)
                     if key.lower() == 'dirichlet':
-                        # Dirichlet condition: compare predictions to specified values
                         boundary_loss += torch.mean(torch.square(pred - values))
                     elif key.lower() == 'neumann':
-                        # Neumann condition: compute the gradient and compare to specified flux
-                        pred_grad = torch.autograd.grad(pred, points, grad_outputs=torch.ones_like(pred), create_graph=True)[0]
-                        boundary_loss += torch.mean(torch.square(pred_grad - values))
+                        pred_grad = torch.autograd.grad(
+                            pred,
+                            points,
+                            grad_outputs=torch.ones_like(pred),
+                            create_graph=True)[0]
+                        boundary_loss += torch.mean(
+                            torch.square(pred_grad - values))
+                    elif key.lower() == 'robin':
+                        pred_grad = torch.autograd.grad(
+                            pred,
+                            points,
+                            grad_outputs=torch.ones_like(pred),
+                            create_graph=True)[0]
+                        robin_loss = alpha * pred + beta * pred_grad - values
+                        boundary_loss += torch.mean(torch.square(robin_loss))
                     else:
-                        logger.warning(f"Unknown boundary condition type: {key}. Skipping boundary value.")
+                        logger.warning(
+                            f"Unknown boundary condition type: {key}. Skipping boundary value."
+                        )
                         continue
 
         return boundary_loss
@@ -127,14 +165,14 @@ class PINNModel(TorchModel):
         """Combined loss function including data, physics, and boundary losses."""
         outputs = outputs[0]
         labels = labels[0]
-        data_loss = self.loss_fn(outputs, labels, weights)
+        data_loss = self.loss_fn(outputs, labels)
         physics_loss = self._compute_pde_loss(torch.Tensor(outputs))
         boundary_loss = self._compute_boundary_loss()
 
         total_loss = (self.data_weight * data_loss +
                       self.physics_weight * physics_loss + boundary_loss)
 
-        return torch.tensor(total_loss)
+        return total_loss
 
     def predict(self, dataset):
         """
