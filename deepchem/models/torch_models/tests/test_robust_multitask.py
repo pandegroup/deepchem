@@ -2,9 +2,6 @@ import numpy as np
 import pytest
 import tempfile
 import os
-import deepchem as dc
-import tempfile
-import os
 try:
     import torch
     import torch.nn as nn
