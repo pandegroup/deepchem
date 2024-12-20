@@ -135,11 +135,6 @@ def test_pinn_heat_equation():
     y_true = x_test  # analytical solution: u(x) = x
     mse = torch.mean((y_pred - y_true)**2)
 
-    print(f"Final MSE: {mse.item()}")
-    print(
-        f"Boundary values - u(0): {y_pred[0].item()}, u(1): {y_pred[-1].item()}"
-    )
-
     assert mse < 1e-2, f"MSE {mse} is too high"
     assert torch.abs(
         y_pred[0]) < 1e-2, "Boundary condition at x=0 not satisfied"
@@ -149,6 +144,4 @@ def test_pinn_heat_equation():
     x_interior = x_test[1:-1].clone().requires_grad_(True)
     residuals = heat_equation_residual(model, x_interior)
     pde_error = torch.mean(torch.abs(residuals))
-
-    print(f"PDE residual error: {pde_error.item()}")
     assert pde_error < 1e-2, "PDE residuals are too high"
