@@ -45,7 +45,6 @@ class PINNModel(TorchModel):
     def custom_loss(outputs, labels, weights=None):
         outputs = outputs[0]
         labels = labels[0]
-        
         data_loss = torch.mean(torch.square(outputs - labels))
         pde_residuals = heat_equation_residual(model, labels)
         pde_loss = torch.mean(torch.abs(pde_residuals))

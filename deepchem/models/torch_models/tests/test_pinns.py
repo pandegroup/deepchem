@@ -99,12 +99,12 @@ def test_pinn_heat_equation():
                                       create_graph=True,
                                       retain_graph=True)[0]
 
-        return du_dx - d2u_dx2 # Let alpha be 1.0
-    
+        return du_dx - d2u_dx2  # Let alpha be 1.0
+
     def custom_loss(outputs, labels, weights=None):
         outputs = outputs[0]
         labels = labels[0]
-        
+
         data_loss = torch.mean(torch.square(outputs - labels))
         pde_residuals = heat_equation_residual(model, labels)
         pde_loss = torch.mean(torch.abs(pde_residuals))
@@ -116,7 +116,7 @@ def test_pinn_heat_equation():
                 if points is not None and values is not None:
                     pred = model(points)
                     boundary_loss += torch.mean(torch.square(pred - values))
-        return data_loss + pde_loss + 10*boundary_loss
+        return data_loss + pde_loss + 10 * boundary_loss
 
     def generate_data(n_points: int = 200):
         x_interior = torch.linspace(0, 1, n_points)[1:-1].reshape(-1, 1)
