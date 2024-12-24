@@ -57,7 +57,7 @@ class PINNModel(TorchModel):
     def __init__(self,
                  model: Optional[nn.Module] = None,
                  in_channels: Optional[int] = None,
-                 loss_fn: Union[Callable, nn.Module] = nn.MSELoss(),
+                 loss_fn: Optional[Callable] = None,
                  data_weight: float = 1.0,
                  boundary_data: Dict = {},
                  pde_fn: Union[List,
@@ -102,7 +102,7 @@ class PINNModel(TorchModel):
         if not isinstance(pde_weights, list):
             pde_weights = [pde_weights] * len(pde_fn)
 
-        self.loss_fn = loss_fn
+        self.loss_fn = loss_fn or self._loss_fn
         self.pde_fn = [pde_fn] if not isinstance(pde_fn, list) else pde_fn
         self.boundary_data = boundary_data
         self.eval_fn = eval_fn or self._default_eval_fn
@@ -111,7 +111,7 @@ class PINNModel(TorchModel):
         self.pde_weights = ([pde_weights] * len(self.pde_fn) if
                             not isinstance(pde_weights, list) else pde_weights)
         super(PINNModel, self).__init__(model=model,
-                                        loss=self._loss_fn,
+                                        loss=self.loss_fn,
                                         **kwargs)
 
     def _compute_pde_loss(self, x: torch.Tensor) -> torch.Tensor:
@@ -199,7 +199,7 @@ class PINNModel(TorchModel):
         """
         outputs = outputs[0]
         labels = labels[0]
-        data_loss = self.loss_fn(outputs, labels)
+        data_loss = nn.MSELoss()(outputs, labels)
         physics_loss = self._compute_pde_loss(torch.Tensor(outputs))
         boundary_loss = self._compute_boundary_loss()
 

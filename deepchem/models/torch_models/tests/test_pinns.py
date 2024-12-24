@@ -82,7 +82,10 @@ def test_pinn_heat_equation():
             return self.net(x)
 
     def heat_equation_residual(model, x):
-        """Compute d²u/dx² for the heat equation"""
+        """
+        The heat equation is given by du/dx = alpha * d²u/dx²
+
+        The goal is to minimize d²u/dx² - alpha * du/dx."""
         x.requires_grad_(True)
         u = model(x)
 
@@ -96,7 +99,24 @@ def test_pinn_heat_equation():
                                       create_graph=True,
                                       retain_graph=True)[0]
 
-        return d2u_dx2
+        return du_dx - d2u_dx2 # Let alpha be 1.0
+    
+    def custom_loss(outputs, labels, weights=None):
+        outputs = outputs[0]
+        labels = labels[0]
+        
+        data_loss = torch.mean(torch.square(outputs - labels))
+        pde_residuals = heat_equation_residual(model, labels)
+        pde_loss = torch.mean(torch.abs(pde_residuals))
+        boundary_loss = 0.0
+        for _, value in boundary_data.items():
+            if isinstance(value, dict):
+                points = value.get('points')
+                values = value.get('values')
+                if points is not None and values is not None:
+                    pred = model(points)
+                    boundary_loss += torch.mean(torch.square(pred - values))
+        return data_loss + pde_loss + 10*boundary_loss
 
     def generate_data(n_points: int = 200):
         x_interior = torch.linspace(0, 1, n_points)[1:-1].reshape(-1, 1)
@@ -120,13 +140,14 @@ def test_pinn_heat_equation():
     model = HeatNet()
     pinn = PINNModel(model=model,
                      pde_fn=lambda u, x: heat_equation_residual(model, x),
+                     loss_fn=custom_loss,
                      boundary_data=boundary_data,
                      learning_rate=0.001,
                      batch_size=32,
                      data_weight=1.0,
                      physics_weight=1.0)
 
-    pinn.fit(dataset, nb_epoch=100)
+    pinn.fit(dataset, nb_epoch=1000)
 
     x_test = torch.linspace(0, 1, 100).reshape(-1, 1)
     with torch.no_grad():
