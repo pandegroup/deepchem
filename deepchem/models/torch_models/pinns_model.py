@@ -238,8 +238,7 @@ class PINNModel(TorchModel):
         -------
         Predicted values
         """
-        eval_fn = self.eval_fn or self._default_eval_fn
-        return eval_fn(dataset)
+        return self.eval_fn(dataset)
 
 
 class NeuralNet(nn.Module):
