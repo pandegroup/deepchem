@@ -40,6 +40,25 @@ class PINNModel(TorchModel):
         }
     }
 
+    [3] loss_fn: This is a custom loss function that combines data, physics, and boundary losses.
+    An example of a custom loss function is shown below:
+    def custom_loss(outputs, labels, weights=None):
+        outputs = outputs[0]
+        labels = labels[0]
+        
+        data_loss = torch.mean(torch.square(outputs - labels))
+        pde_residuals = heat_equation_residual(model, labels)
+        pde_loss = torch.mean(torch.abs(pde_residuals))
+        boundary_loss = 0.0
+        for _, value in boundary_data.items():
+            if isinstance(value, dict):
+                points = value.get('points')
+                values = value.get('values')
+                if points is not None and values is not None:
+                    pred = model(points)
+                    boundary_loss += torch.mean(torch.square(pred - values))
+        return data_loss + pde_loss + 10*boundary_loss
+
     References
     ----------
     .. [1] Raissi et. al. "Physics-informed neural networks: A deep learning framework for solving
