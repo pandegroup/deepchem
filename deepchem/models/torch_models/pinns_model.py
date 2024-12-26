@@ -9,111 +9,121 @@ logger = logging.getLogger(__name__)
 
 class PINNModel(TorchModel):
     """
-    This model is recommended for linear partial differential equations. When accurately write
-    the gradient function in PyTorch depending on your use case, then it will work as well.
+    This model is designed for solving linear partial differential equations (PDEs) using
+    Physics-Informed Neural Networks (PINNs). It extends the TorchModel class, and its
+    methods are similar to those in TorchModel, with additional functionality for handling
+    physics-based constraints.
 
-    This is class is derived from the TorchModel class and methods are also very similar to TorchModel,
+    Parameters
+    ----------
+    pde_fn : callable
+        A function that defines the physics PDE residuals. Each PINN may have a unique
+        strategy for calculating the physics losses, and this function specifies how
+        the PINNModel computes the PDE residuals. The function should follow this format:
 
-    This class requires two important arguments.
+        >>> def heat_equation_residual(model, x):
+        >>>     x.requires_grad_(True)
+        >>>     u = model(x)
+        >>>     du_dx = torch.autograd.grad(u.sum(), x, create_graph=True, retain_graph=True)[0]
+        >>>     d2u_dx2 = torch.autograd.grad(du_dx.sum(), x, create_graph=True, retain_graph=True)[0]
+        >>>     return d2u_dx2
 
-    [1] pde_fn : Each PINNs may have a different strategy for calculating the physics losses. This
-    function tells the PINNModel how to go about computing the physics PDE residuals.
-    It should follow this format:
+        Here, `model` is the neural network being trained, and `x` is the input.
 
-    >>>
-    >> def heat_equation_residual(model, x):
-    >>    x.requires_grad_(True)
-    >>    u = model(x)
-    >>    du_dx = torch.autograd.grad(u.sum(), x, create_graph=True, retain_graph=True)[0]
-    >>    d2u_dx2 = torch.autograd.grad(du_dx.sum(), x, create_graph=True, retain_graph=True)[0]
-    >>    return d2u_dx2
+    boundary_data : dict
+        A dictionary containing the boundary condition data. It should have the following format:
 
-    The model argument is the neural network model that is being trained. The x argument is the input.
-    You can either use the default neural network defined in the class or pass your own model as argument to the class.
+        >>> boundary_data = {
+        >>>     'dirichlet': {
+        >>>         'points': torch.tensor([[0.0], [1.0]], dtype=torch.float32),
+        >>>         'values': torch.tensor([[0.0], [1.0]], dtype=torch.float32)
+        >>>     }
+        >>> }
 
-    [2] boundary_data: This is a dictionary containing the boundary conditions data.
-    The dictionary should have the following format:
-    boundary_data = {
-        'dirichlet': {
-            'points': torch.tensor([[0.0], [1.0]], dtype=torch.float32),
-            'values': torch.tensor([[0.0], [1.0]], dtype=torch.float32)
-        }
-    }
+        - `points`: Tensor of input points where boundary conditions are defined.
+        - `values`: Tensor of target values at the boundary points.
 
-    [3] loss_fn: This is a custom loss function that combines data, physics, and boundary losses.
-    An example of a custom loss function is shown below:
-    def custom_loss(outputs, labels, weights=None):
-        outputs = outputs[0]
-        labels = labels[0]
-        data_loss = torch.mean(torch.square(outputs - labels))
-        pde_residuals = heat_equation_residual(model, labels)
-        pde_loss = torch.mean(torch.abs(pde_residuals))
-        boundary_loss = 0.0
-        for _, value in boundary_data.items():
-            if isinstance(value, dict):
-                points = value.get('points')
-                values = value.get('values')
-                if points is not None and values is not None:
-                    pred = model(points)
-                    boundary_loss += torch.mean(torch.square(pred - values))
-        return data_loss + pde_loss + 10*boundary_loss
+    loss_fn : callable
+        A custom loss function that combines data, physics, and boundary losses.
+        An example is shown below:
+
+        >>> def custom_loss(outputs, labels, weights=None):
+        >>>     outputs = outputs[0]
+        >>>     labels = labels[0]
+        >>>     data_loss = torch.mean(torch.square(outputs - labels))
+        >>>     pde_residuals = heat_equation_residual(model, labels)
+        >>>     pde_loss = torch.mean(torch.abs(pde_residuals))
+        >>>     boundary_loss = 0.0
+        >>>     for _, value in boundary_data.items():
+        >>>         if isinstance(value, dict):
+        >>>             points = value.get('points')
+        >>>             values = value.get('values')
+        >>>             if points is not None and values is not None:
+        >>>                 pred = model(points)
+        >>>                 boundary_loss += torch.mean(torch.square(pred - values))
+        >>>     return data_loss + pde_loss + 10 * boundary_loss
 
     References
     ----------
-    .. [1] Raissi et. al. "Physics-informed neural networks: A deep learning framework for solving
-        forward and inverse problems involving nonlinear partial differential equations" Journal of
-        Computational Physics https://doi.org/10.1016/j.jcp.2018.10.045
+    [1] Raissi et al. "Physics-informed neural networks: A deep learning framework for solving
+        forward and inverse problems involving nonlinear partial differential equations."
+        Journal of Computational Physics, https://doi.org/10.1016/j.jcp.2018.10.045
 
-    .. [2] Raissi et. al. "Physics Informed Deep Learning (Part I): Data-driven
-        Solutions of Nonlinear Partial Differential Equations" arXiv preprint arXiv:1711.10561
+    [2] Raissi et al. "Physics-Informed Deep Learning (Part I): Data-driven Solutions of Nonlinear
+        Partial Differential Equations." arXiv preprint arXiv:1711.10561
 
     Notes
     -----
-    This class requires PyTorch to be installed.
+    - This class requires PyTorch to be installed.
+    - Users can use the default neural network provided by the class or pass a custom model.
     """
 
     def __init__(self,
                  model: Optional[nn.Module] = None,
-                 in_channels: Optional[int] = None,
+                 in_features: Optional[int] = None,
                  loss_fn: Optional[Callable] = None,
-                 data_weight: float = 1.0,
-                 boundary_data: Dict = {},
                  pde_fn: Union[List,
                                Callable] = [lambda u, x: torch.zeros_like(u)],
                  pde_weights: Union[List, float] = [1.0],
+                 boundary_data: Dict = {},
+                 data_weight: float = 1.0,
                  physics_weight: float = 1.0,
                  eval_fn: Optional[Callable] = None,
                  **kwargs) -> None:
-        """Initialize PINNModel.
+        """
+        Initialize PINNModel.
 
         Parameters
         ----------
-        model: nn.Module
-            PyTorch neural network model for training
-        loss: Loss or LossFn
-            Loss function for the data-driven part
-        pde_fn: Callable
-            Function that computes the PDE residuals. Should take model predictions
-            and input coordinates as arguments and return the PDE residuals
-        pde_weights: List[float]
-            List of weights for the PDE loss terms
-        boundary_data: Dict
-            Dictionary containing boundary conditions data
-        eval_fn: Callable, optional (default=None)
-            Custom function for model evaluation during inference
-        data_weight: float, optional (default=1.0)
-            Weight for the data-driven loss term
-        physics_weight: float, optional (default=1.0)
-            Weight for the physics-informed loss term
-        **kwargs:
-            Additional arguments to pass to TorchModel
+        model : nn.Module, optional
+            PyTorch neural network model for training. If not provided, a default neural network is used.
+        in_features : int, optional
+            Number of input features for the default model. Ignored if a custom model is provided.
+        loss_fn : Callable
+            Loss function for the data-driven part of the training.
+        pde_fn : Callable or List[Callable]
+            Function(s) that compute the PDE residuals. Should take model predictions and input
+            coordinates as arguments and return the PDE residuals.
+        pde_weights : float or List[float]
+            Weights for each PDE when there are multiple. If a single value is provided, it is applied to all PDE terms.
+        boundary_data : Dict
+            Dictionary containing boundary condition data.
+        data_weight : float, optional, default=1.0
+            Weight for the data-driven loss term in the total loss computation.
+        physics_weight : float, optional, default=1.0
+            Weight for the physics-informed loss term in the total loss computation.
+        eval_fn : Callable, optional
+            Custom function for model evaluation during inference. If not provided, a default
+            evaluation function is used.
+        **kwargs :
+            Additional arguments passed to the parent `TorchModel` class.
         """
 
         if model is None:
-            if in_channels is not None:
-                model = NeuralNet(in_channels=in_channels)
+            if in_features is not None:
+                model = NeuralNet(in_features=in_features)
             else:
-                model = NeuralNet(in_channels=1)
+                model = NeuralNet(in_features=1)
 
         if not isinstance(pde_fn, list):
             pde_fn = [pde_fn]
@@ -133,18 +143,24 @@ class PINNModel(TorchModel):
                                         **kwargs)
 
     def _compute_pde_loss(self, x: torch.Tensor) -> torch.Tensor:
-        """Compute the physics-informed loss using PDE residuals.
+        """
+        Compute the physics-informed loss using PDE residuals.
+
+        The physics loss ensures that the model satisfies the given PDEs by minimizing
+        the residuals computed for the input coordinates.
 
         Parameters
         ----------
-        x: torch.Tensor
-            Input coordinates where PDE residuals should be computed
+        x : torch.Tensor
+            Input coordinates where PDE residuals are computed. Gradients are enabled
+            on `x` to allow for backpropagation through the PDE computations.
 
         Returns
         -------
         torch.Tensor
-            Computed PDE loss
+            The computed physics-informed loss.
         """
+
         x.requires_grad_(True)
         u_pred = self.model(x)
         residual_loss = torch.tensor(0.0)
@@ -154,13 +170,24 @@ class PINNModel(TorchModel):
         return residual_loss
 
     def _compute_boundary_loss(self) -> torch.Tensor:
-        """Compute loss at boundary points for Dirichlet, Neumann and Robin conditions.
+        """
+        Compute the loss at boundary points for Dirichlet, Neumann, and Robin conditions.
+
+        This loss ensures that the model satisfies the specified boundary conditions:
+            - Dirichlet: Model outputs match the target values at boundary points.
+            - Neumann: Gradients of model outputs match target values at boundary points.
+            - Robin: A linear combination of model outputs and their gradients matches target values.
+
+        Parameters
+        ----------
+        None
 
         Returns
         -------
         torch.Tensor
-            Computed boundary loss
+            The computed boundary loss.
         """
+
         if not self.boundary_data:
             return torch.tensor(0.0)
 
@@ -207,14 +234,26 @@ class PINNModel(TorchModel):
     def _loss_fn(self, outputs: list, labels: list,
                  weights: list) -> torch.Tensor:
         """
-        This is a custom loss function that combines data, physics, and boundary losses.
-        The additional physics and boundary loss are constraints that are used to enforce the model to learn the underlying physics of the system.
-        The physics loss is computed using the PDE residuals, and the boundary loss is computed using the boundary conditions.
+        Custom loss function that combines data, physics, and boundary losses.
 
-        Total loss = data_weight * data_loss + physics_weight * physics_loss + boundary_loss
+        The total loss is calculated as:
+            Total loss = data_weight * data_loss + physics_weight * physics_loss + boundary_loss
 
-        data_weight and physics_weight are the weights for the data and physics loss terms, respectively. By default both are set to 1.0.
+        Parameters
+        ----------
+        outputs : list
+            The model's predictions.
+        labels : list
+            The ground truth values corresponding to the predictions.
+        weights : list
+            Optional weights for the loss terms.
+
+        Returns
+        -------
+        torch.Tensor
+            The computed total loss.
         """
+
         outputs = outputs[0]
         labels = labels[0]
         data_loss = nn.MSELoss()(outputs, labels)
@@ -242,12 +281,31 @@ class PINNModel(TorchModel):
 
 
 class NeuralNet(nn.Module):
-    """A simple neural network that will be used by the PINNModel as the default model when no model is provided.
+    """
+    A simple feedforward neural network used as the default model for PINNModel.
+
+    The network consists of three fully connected layers with 64 hidden units each,
+    and Tanh activations. The output layer has a single neuron for scalar outputs.
+
+    Parameters
+    ----------
+    in_features : int, optional, default=1
+        Number of input features for the network.
+
+    Methods
+    -------
+    forward(x)
+        Forward pass through the network.
+
+    Returns
+    -------
+    torch.Tensor
+        The output of the network.
     """
 
-    def __init__(self, in_channels: int = 1):
+    def __init__(self, in_features: int = 1):
         super(NeuralNet, self).__init__()
-        self.net = nn.Sequential(nn.Linear(in_channels, 64), nn.Tanh(),
+        self.net = nn.Sequential(nn.Linear(in_features, 64), nn.Tanh(),
                                  nn.Linear(64, 64), nn.Tanh(), nn.Linear(64, 1))
 
     def forward(self, x):
