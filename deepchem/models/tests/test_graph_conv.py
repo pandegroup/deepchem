@@ -229,3 +229,17 @@ def test_graphconvmodel_reload():
     origpred = model.predict(predset)
     reloadpred = reloaded_model.predict(predset)
     assert np.allclose(origpred, reloadpred)
+
+
+@pytest.mark.torch
+def test_graphconvmodel_dynamic_layers():
+    tasks, datasets, _, _ = get_dataset('classification', 'GraphConv')
+    batch_size = 10
+    model = GraphConvModel(len(tasks),
+                           number_input_features=75,
+                           batch_size=batch_size,
+                           batch_normalize=False,
+                           graph_conv_layers=[32, 64, 64],
+                           mode='classification')
+    model.fit(datasets, nb_epoch=1)
+    _ = model.predict(datasets)
