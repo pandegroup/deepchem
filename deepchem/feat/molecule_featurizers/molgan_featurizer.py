@@ -96,12 +96,13 @@ class MolGanFeaturizer(MolecularFeaturizer):
 
         # bond labels
         if bond_labels is None:
+            # defaults from the paper
+            # section 5, "generator architecture"
             self.bond_labels = [
                 Chem.rdchem.BondType.ZERO,
                 Chem.rdchem.BondType.SINGLE,
                 Chem.rdchem.BondType.DOUBLE,
                 Chem.rdchem.BondType.TRIPLE,
-                Chem.rdchem.BondType.AROMATIC,
             ]
         else:
             self.bond_labels = bond_labels

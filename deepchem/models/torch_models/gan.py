@@ -297,8 +297,8 @@ class GAN(nn.Module):
         ]
 
         discrim_gen_outputs = [
-            self._call_discriminator(disc, [gen_output],
-                                     self.conditional_input_layers, False)
+            self._call_discriminator(disc, [gen_output[0]], 
+                                     [gen_output[1]], True)
             for disc in self.discriminators
             for gen_output in generator_outputs
         ]
@@ -857,6 +857,7 @@ class GANModel(TorchModel):
                 inputs.append(feed_dict[input])
             for input in self.conditional_inputs:
                 inputs.append(feed_dict[input])
+
             discrim_error += self.fit_generator(
                 [(inputs, [], [])],
                 variables=self.discrim_variables,
@@ -1158,7 +1159,7 @@ class WGANModel(GANModel):
         torch.Tensor
             A Tensor equal to the mean of the inputs
         """
-        return torch.mean(discrim_output)
+        return -torch.mean(discrim_output[0])
 
     def create_discriminator_loss(
             self, discrim_output_train: List[torch.Tensor],
@@ -1178,8 +1179,8 @@ class WGANModel(GANModel):
         torch.Tensor
             A Tensor equal to the loss function to use for optimizing the discriminator.
         """
-        return torch.mean(discrim_output_train[0][0] -
-                          discrim_output_gen[1]) + discrim_output_train[1]
+        return torch.mean(discrim_output_gen[0] - discrim_output_train[0]) + \
+            discrim_output_train[1] + discrim_output_gen[1]
 
 
 class GradientPenaltyLayer(nn.Module):
@@ -1291,6 +1292,9 @@ class GradientPenaltyLayer(nn.Module):
         super(GradientPenaltyLayer, self).__init__(**kwargs)
         self.gan = gan
         self.discriminator = discriminator
+        # this is needed a to
+        self.ground_truth = True
+        self.eps = []
 
     def forward(self, inputs: Union[list, torch.Tensor],
                 conditional_inputs: torch.Tensor) -> list:
@@ -1308,36 +1312,46 @@ class GradientPenaltyLayer(nn.Module):
         output: list [Tensor, Tensor]
             the output from the discriminator, followed by the gradient penalty.
         """
+        if self.eps == []:
+            self.eps = [torch.rand(inputs[i].shape[0], device=self.gan.device) for i in range(len(inputs))]
         input_on_device = []
-        for tensor in inputs:
-            tensor = tensor.to(torch.float32).to(self.gan.device)
-            input_on_device.append(
-                tensor.requires_grad_(True).to(self.gan.device))
+        for i, tensor in enumerate(inputs):
+            cur = self.eps[i].reshape(-1, *[1 for _ in range(tensor.ndim-1)])
+            cur = cur if self.ground_truth else (1-cur)
+            tensor = tensor.to(torch.float32).to(self.gan.device)*cur
+            input_on_device.append(tensor)
         conditional_inputs_on_device = []
-        for tensor in conditional_inputs:
-            tensor = tensor.to(torch.float32).to(self.gan.device)
-            conditional_inputs_on_device.append(tensor.to(self.gan.device))
-        output = self.discriminator(
-            _list_or_tensor(input_on_device + conditional_inputs_on_device)).to(
+        for i, tensor in enumerate(conditional_inputs):
+            cur = self.eps[i].reshape(-1, *[1 for _ in range(tensor.ndim-1)])
+            cur = cur if self.ground_truth else (1-cur)
+            conditional_tensor = tensor.to(torch.float32).to(self.gan.device)*cur
+            conditional_inputs_on_device.append(conditional_tensor)
+        self.ground_truth = not self.ground_truth
+        if self.ground_truth:
+            self.eps = [] # reset eps for next batch, otherwise maintain the state
+        ip2grad = _list_or_tensor(input_on_device + conditional_inputs_on_device)
+        if isinstance(ip2grad, list):
+            ip2grad = [i.requires_grad_() for i in ip2grad]
+        else:
+            ip2grad = ip2grad.requires_grad_()
+        output = self.discriminator(ip2grad).to(
                 self.gan.device)
         gradients_raw = torch.autograd.grad(
             outputs=output,
-            inputs=input_on_device,
+            inputs=ip2grad,
             grad_outputs=torch.ones_like(output),
             create_graph=True,
             allow_unused=True)
         gradients = [g for g in gradients_raw if g is not None]
-        penalty: Union[torch.Tensor, float]
-        norm2: Union[float, torch.Tensor]
+        penalty = 0.0
         if gradients:
-            norm2 = 0.0
             for g in gradients:
-                g2 = torch.square(g)
-                dims = len(list(g.shape))
-                if dims > 1:
-                    g2 = torch.sum(g2, dim=list(range(1, dims)))
-                norm2 += g2  # type: ignore
-            penalty = torch.square(torch.sqrt(norm2) - 1.0)  # type: ignore
+                g_norm = torch.norm(g, dim=-1)
+                g_pen = torch.square(1.0 - g_norm)
+                # from https://github.com/nicola-decao/MolGAN/blob/cf8012b60265a81267d34a843c0a026ca013b060/optimizers/gan.py#L18
+                reduce_dims = tuple(range(2, g_pen.ndim))
+                pen = torch.mean(g_pen, dim=reduce_dims)
+                penalty += pen
             penalty = self.gan.gradient_penalty * torch.mean(penalty)
         else:
             penalty = 0.0

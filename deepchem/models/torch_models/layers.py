@@ -3363,9 +3363,9 @@ class MolGANConvolutionLayer(nn.Module):
         adj: torch.Tensor = adjacency_tensor.permute(0, 3, 1, 2)[:, 1:, :, :]
 
         output_mul: torch.Tensor = torch.matmul(adj, output_dense)
-        output_sum: torch.Tensor = torch.sum(output_mul,
-                                             dim=1) + self.dense2(node_tensor)
-        output_act: torch.Tensor = self.activation(output_sum)
+        output_mean: torch.Tensor = torch.mean(output_mul,
+                                               dim=1) + self.dense2(node_tensor)
+        output_act: torch.Tensor = self.activation(output_mean)
         output = self.dropout(output_act)
         return adjacency_tensor, node_tensor, output
 
@@ -3643,10 +3643,10 @@ class MolGANEncoderLayer(nn.Module):
     """
 
     def __init__(self,
-                 units: List = [(128, 64), 128],
+                 units: List = [(64, 32), 128], 
                  activation: Callable = torch.tanh,
                  dropout_rate: float = 0.0,
-                 edges: int = 5,
+                 edges: int = 4,
                  nodes: int = 5,
                  name: str = "",
                  device: torch.device = torch.device('cpu'),
