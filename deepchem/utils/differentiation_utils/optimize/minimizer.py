@@ -122,7 +122,7 @@ def adam(
     >>> x0 = torch.tensor(0.0, requires_grad=True)
     >>> x = adam(fcn, x0, [], maxiter=10000)
     >>> x
-    tensor(-1.4999)
+    tensor(-1.5000)
 
     .. math::
         \mathbf{g}_t &= \nabla_{\mathbf{x}} f(\mathbf{x}_{t-1}) \\

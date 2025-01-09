@@ -706,9 +706,9 @@ def normalize_prefix(prefix: str) -> str:
 
     Examples
     --------
-    >>> _normalize_prefix("prefix")
+    >>> normalize_prefix("prefix")
     'prefix.'
-    >>> _normalize_prefix("prefix.")
+    >>> normalize_prefix("prefix.")
     'prefix.'
 
     Parameters
