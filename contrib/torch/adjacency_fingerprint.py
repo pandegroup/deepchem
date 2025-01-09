@@ -9,7 +9,7 @@ import fnmatch
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 import pandas as pd
-
+from rdkit import Chem
 from deepchem.feat.base_classes import Featurizer
 from deepchem.feat.graph_features import atom_features
 from scipy.sparse import csr_matrix
@@ -155,14 +155,17 @@ class AdjacencyFingerprint(Featurizer):
     self.max_valence = max_valence
     self.num_atoms_feature = num_atoms_feature
 
-  def featurize(self, rdkit_mols):
-    featurized_mols = np.empty((len(rdkit_mols)), dtype=object)
+  def featurize(self, rdkit_mols: list) -> np.ndarray:
+        featurized_mols = np.empty((len(rdkit_mols)), dtype=object)
 
-    from rdkit import Chem
-    for idx, mol in enumerate(rdkit_mols):
-      if self.add_hydrogens:
-        mol = Chem.AddHs(mol)
-      featurized_mol = featurize_mol(mol, self.n_atom_types, self.max_n_atoms,
-                                     self.max_valence, self.num_atoms_feature)
-      featurized_mols[idx] = featurized_mol
-    return (featurized_mols)
+        for idx, mol in enumerate(rdkit_mols):
+            try:
+                if self.add_hydrogens:
+                    mol = Chem.AddHs(mol)
+                featurized_mols[idx] = featurize_mol(mol, self.n_atom_types,
+                                                     self.max_n_atoms, self.max_valence,
+                                                     self.num_atoms_feature)
+            except Exception as e:
+                print(f"Error featurizing molecule {idx}: {e}")
+                featurized_mols[idx] = None
+        return featurized_mols
