@@ -94,8 +94,8 @@ class WeaveModel(KerasModel):
                  activation_fns: OneOrMany[ActivationFn] = tf.nn.relu,
                  batch_normalize: bool = True,
                  batch_normalize_kwargs: Dict = {
-                     "renorm": True,
-                     "fused": False
+                   
+                   
                  },
                  gaussian_expand: bool = True,
                  compress_post_gaussian_expansion: bool = False,

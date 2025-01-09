@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 from collections.abc import Sequence as SequenceCollection
 from typing import Optional, Callable, Dict, List, Tuple
@@ -2744,7 +2745,7 @@ class WeaveLayer(tf.keras.layers.Layer):
                  init: str = 'glorot_uniform',
                  activation: str = 'relu',
                  batch_normalize: bool = True,
-                 batch_normalize_kwargs: Dict = {"renorm": True},
+                 batch_normalize_kwargs: Dict = {},
                  **kwargs):
         """
         Parameters
