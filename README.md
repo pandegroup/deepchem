@@ -124,6 +124,49 @@ If you try install all soft dependencies at once or contribute to deepchem, we r
 
 Please check [this introduction](https://deepchem.readthedocs.io/en/latest/installation.html#from-source-with-conda).
 
+## Quick Start
+
+### Environment Requirement
+- Python 3.7+
+- Conda or pip
+
+### Conda ###
+```bash
+conda create -n deepchem-env python=3.8 -y
+conda activate deepchem-env
+conda install -c conda-forge rdkit deepchem -y
+```
+
+### pip ###
+```bash
+pip install deepchem
+```
+
+### Installation test ###
+```bash
+python -c "import deepchem; print(deepchem.__version__)"
+```
+
+### Example (HIV activity classification task) ###
+```bash
+import deepchem as dc
+from deepchem.models import GraphConvModel
+
+# Load the example dataset (HIV dataset)
+tasks, datasets, transformers = dc.molnet.load_hiv()
+train_dataset, valid_dataset, test_dataset = datasets
+
+# Initialize a Graph Convolutional Model
+model = GraphConvModel(n_tasks=len(tasks), mode='classification')
+
+# Train the model
+model.fit(train_dataset, nb_epoch=10)
+
+# Evaluate model performance
+metric = dc.metrics.Metric(dc.metrics.roc_auc_score)
+print("Test ROC-AUC:", model.evaluate(test_dataset, [metric])['roc_auc_score'])
+```
+
 ## Getting Started
 
 The DeepChem project maintains an extensive collection of [tutorials](https://github.com/deepchem/deepchem/tree/master/examples/tutorials). All tutorials are designed to be run on Google colab (or locally if you prefer). Tutorials are arranged in a suggested learning sequence which will take you from beginner to proficient at molecular machine learning and computational biology more broadly.
