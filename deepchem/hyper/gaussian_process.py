@@ -231,13 +231,15 @@ class GaussianProcessHyperparamOpt(HyperparamOpt):
             string representations of hyperparameter sets to validation
             scores.
         """
-        try:
-            from pyGPGO.covfunc import matern32
-            from pyGPGO.acquisition import Acquisition
-            from pyGPGO.surrogates.GaussianProcess import GaussianProcess
-            from pyGPGO.GPGO import GPGO
-        except ModuleNotFoundError:
-            raise ImportError("This class requires pyGPGO to be installed.")
+        # try:
+        #     from pyGPGO.covfunc import matern32
+        #     from pyGPGO.acquisition import Acquisition
+        #     from pyGPGO.surrogates.GaussianProcess import GaussianProcess
+        #     from pyGPGO.GPGO import GPGO
+        # except ModuleNotFoundError:
+        #     raise ImportError("This class requires pyGPGO to be installed.")
+
+        from deepchem.hyper.pyGPGO_classes import matern32, Acquisition, GaussianProcess, GPGO
 
         # Specify logfile
         log_file = None

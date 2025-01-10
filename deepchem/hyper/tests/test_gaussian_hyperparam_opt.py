@@ -1,6 +1,5 @@
 """
 Tests for Gaussian Process Hyperparameter Optimization.
-
 These tests fails every so often. I think it's when the Gaussian
 process optimizer doesn't find an optimal point. This is still a
 valuable test suite so leaving it in despite the flakiness.
