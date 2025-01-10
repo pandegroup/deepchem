@@ -10,6 +10,7 @@ import tarfile
 import zipfile
 import logging
 from urllib.request import urlretrieve
+from deepchem.utils.rdkit_utils import get_xyz_from_mol
 from typing import Any, Iterator, List, Optional, Tuple, Union, cast, IO
 
 import pandas as pd
@@ -271,9 +272,7 @@ def load_sdf_files(input_files: List[str],
                 for task in tasks:
                     df_row.append(mol.GetProp(str(task)))
 
-            conf = mol.GetConformer()
-            positions = conf.GetPositions()
-            pos_x, pos_y, pos_z = zip(*positions)
+            pos_x, pos_y, pos_z = tuple([tuple(pos_dim) for pos_dim in np.transpose(get_xyz_from_mol(mol)).tolist()])
             df_row.append(str(pos_x))
             df_row.append(str(pos_y))
             df_row.append(str(pos_z))
