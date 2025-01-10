@@ -28,3 +28,4 @@ dependencies:
     - gensim  # used by mol2vec
     - scipy<=1.12.0
     - tensorboard
+  - pyscf # used by ferminet
