@@ -61,10 +61,10 @@ or
 conda install -c conda-forge deepchem
 ```
 
-Deepchem provides support for tensorflow, pytorch, jax and each require
-a individual pip Installation.
+Deepchem provides support for Tensorflow, PyTorch and Jax; each requires
+an individual pip Installation.
 
-For using models with tensorflow dependencies, you install using
+For using models with Tensorflow dependencies, you install using
 
 ```bash
 pip install deepchem[tensorflow]
@@ -79,7 +79,7 @@ For using models with jax dependencies, you install using
 ```bash
 pip install deepchem[jax]
 ```
-If GPU support is required, then make sure CUDA is installed and then install the desired deep learning framework using the links below before installing deepchem
+If GPU support is required, then make sure CUDA is installed and then install the desired deep learning framework using the links given below before installing deepchem.
 
 1. tensorflow - just cuda installed
 2. pytorch - https://pytorch.org/get-started/locally/#start-locally
