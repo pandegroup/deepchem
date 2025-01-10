@@ -1,4 +1,5 @@
 Title,File Name
 Exploring Quantum Chemistry with GDB1k,Exploring_Quantum_Chemistry_with_GDB1k.ipynb
 Finding ground state energy of molecules with DeepQMC,DeepQMC_tutorial.ipynb
-Differentiable Density Functional Theory, Training_an_Exchange_Correlation_Functional_using_Deepchem.ipynb
+Differentiable Density Functional Theory,Training_an_Exchange_Correlation_Functional_using_Deepchem.ipynb
+Implementing Density Functional Theory Using Deepchem,Implementing_Density_Functional_Theory_Using_Deepchem.ipynb
