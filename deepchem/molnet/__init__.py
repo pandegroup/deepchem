@@ -46,3 +46,5 @@ from deepchem.molnet.dnasim import simulate_motif_counting
 from deepchem.molnet.dnasim import simple_motif_embedding
 from deepchem.molnet.dnasim import motif_density
 from deepchem.molnet.dnasim import simulate_single_motif_detection
+from .run_benchmark import run_benchmark
+
