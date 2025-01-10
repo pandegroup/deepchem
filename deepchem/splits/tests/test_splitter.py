@@ -174,7 +174,7 @@ class TestSplitter(unittest.TestCase):
         Test singletask SingletaskStratifiedSplitter class.
         """
         solubility_dataset = load_solubility_data()
-        stratified_splitter = dc.splits.ScaffoldSplitter()
+        stratified_splitter = dc.splits.SingletaskStratifiedSplitter()
         train_data, valid_data, test_data = \
           stratified_splitter.train_valid_test_split(
             solubility_dataset, frac_train=0.8, frac_valid=0.1, frac_test=0.1)
@@ -614,3 +614,26 @@ class TestSplitter(unittest.TestCase):
             cv_folds[1][1])
         assert len(multitask_dataset) == len(cv_folds[2][0]) + len(
             cv_folds[2][1])
+
+    def test_SingletaskStratified_k_fold_split(self):
+        """
+        Test SingletaskStratifiedSplitter.k_fold_split
+        """
+
+        n_samples = 20
+        n_tasks = 10
+        n_features = 10
+
+        X = np.random.rand(n_samples, n_features)
+        y = np.random.rand(n_samples, n_tasks)
+
+        K = 7
+        # When n_samples is not divisible by K, the function will return n_samples % K sub-arrays of size n_samples//K + 1 and the rest of size n_samples//K
+        # Thus in our example, we will have 20%7 = 6 sub-arrays of size 3 and 1 sub-array of size 2
+
+        dataset = dc.data.DiskDataset.from_numpy(X, y)
+        splitter = dc.splits.SingletaskStratifiedSplitter(task_number=5)
+        folds = splitter.k_fold_split(dataset, k=K)
+        assert len(folds) == 7
+        assert folds[0][0].y.shape[0] == 17
+        assert folds[0][1].y.shape[0] == 3

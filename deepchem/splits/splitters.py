@@ -635,6 +635,7 @@ class RandomStratifiedSplitter(Splitter):
 
 class SingletaskStratifiedSplitter(Splitter):
     """Class for doing data splits by stratification on a single task.
+    Sorts the molecules based on their label values for a task and then repeatedly take buckets of datapoints to augment the training, validation and test subsets.
 
     Examples
     --------
@@ -642,9 +643,9 @@ class SingletaskStratifiedSplitter(Splitter):
     >>> n_features = 10
     >>> n_tasks = 10
     >>> X = np.random.rand(n_samples, n_features)
-    >>> y = np.random.rand(n_samples, n_tasks)
+    >>> y = np.array([[x for _ in range(n_tasks)] for x in range(n_samples)])
     >>> w = np.ones_like(y)
-    >>> dataset = DiskDataset.from_numpy(np.ones((100,n_tasks)), np.ones((100,n_tasks)))
+    >>> dataset = DiskDataset.from_numpy(X,y)
     >>> splitter = SingletaskStratifiedSplitter(task_number=5)
     >>> train_dataset, test_dataset = splitter.train_test_split(dataset)
     """
@@ -668,9 +669,9 @@ class SingletaskStratifiedSplitter(Splitter):
             directories: Optional[List[str]] = None,
             seed: Optional[int] = None,
             log_every_n: Optional[int] = None,
-            **kwargs) -> List[Dataset]:
+            **kwargs) -> Sequence[Tuple[Dataset, Dataset]]:
         """
-        Splits compounds into k-folds using stratified sampling.
+        Sort molecules based on their label values for a task and then split them for k-fold cross validation by taking consecutive chunks.
         Overriding base class k_fold_split.
 
         Parameters
@@ -702,12 +703,19 @@ class SingletaskStratifiedSplitter(Splitter):
         sortidx_list = np.array_split(sortidx, k)
 
         fold_datasets = []
+        k_fold_dataset = []
         for fold in range(k):
             fold_dir = directories[fold]
             fold_ind = sortidx_list[fold]
             fold_dataset = dataset.select(fold_ind, fold_dir)
             fold_datasets.append(fold_dataset)
-        return fold_datasets
+
+        for fold in range(k):
+            fold_dataset_copy = fold_datasets.copy()
+            holdOutSet = fold_dataset_copy.pop(fold)
+            merged_ds = DiskDataset.merge(fold_dataset_copy)
+            k_fold_dataset.append((merged_ds, holdOutSet))
+        return k_fold_dataset
 
     def split(
         self,
