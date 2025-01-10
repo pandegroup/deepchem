@@ -599,6 +599,12 @@ def pair_features(
         mapping[(int(a1), int(a2))] = n
     num_atoms = mol.GetNumAtoms()
     rings = mol.GetRingInfo().AtomRings()
+    # Save coordinates
+    if not graph_distance:
+        coords = np.zeros((N, 3))
+        for atom in range(N):
+            pos = mol.GetConformer(0).GetAtomPosition(atom)
+            coords[atom, :] = [pos.x, pos.y, pos.z]
     for a1 in range(num_atoms):
         for a2 in bond_adj_list[a1]:
             # first `bt_len` features are bond features(if applicable)
@@ -631,22 +637,18 @@ def pair_features(
                                      num_atoms,
                                      bond_adj_list,
                                      max_distance=max_distance)
-            for a2 in range(num_atoms):
-                if (int(a1), int(a2)) not in mapping:
-                    # For ring pairs outside max pairs distance continue
-                    continue
-                else:
-                    n = mapping[(int(a1), int(a2))]
-                    features[n, bt_len + 1:] = distance[a2]
-    # Euclidean distance between atoms
-    if not graph_distance:
-        coords = np.zeros((N, 3))
-        for atom in range(N):
-            pos = mol.GetConformer(0).GetAtomPosition(atom)
-            coords[atom, :] = [pos.x, pos.y, pos.z]
-        features[:, :, -1] = np.sqrt(np.sum(np.square(
-          np.stack([coords] * N, axis=1) - \
-          np.stack([coords] * N, axis=0)), axis=2))
+        else:
+            # Euclidean distance between atoms
+            distance = np.sqrt(
+                np.sum(np.square(np.stack([coords[a1]] * N, axis=0) - coords),
+                       axis=1))
+        for a2 in range(num_atoms):
+            if (int(a1), int(a2)) not in mapping:
+                # For ring pairs outside max pairs distance continue
+                continue
+            else:
+                n = mapping[(int(a1), int(a2))]
+                features[n, bt_len + 1:] = distance[a2]
 
     return features, pair_edges
 
