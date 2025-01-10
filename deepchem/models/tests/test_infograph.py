@@ -75,16 +75,16 @@ def test_infographencoder():
     from deepchem.models.torch_models.infograph import InfoGraphEncoder
     from deepchem.feat.graph_data import GraphData, BatchGraphData
     torch.manual_seed(123)
-    embedding_dim = 32
+    embedding_dim = 8
     num_nodes = 10
     num_graphs = 3
-    encoder = InfoGraphEncoder(num_features=25,
+    encoder = InfoGraphEncoder(num_features=5,
                                edge_features=10,
                                embedding_dim=embedding_dim)
 
     data = []
     for i in range(num_graphs):
-        node_features = np.random.randn(num_nodes, 25)
+        node_features = np.random.randn(num_nodes, 5)
         edge_index = np.array([[0, 1, 2], [1, 2, 3]])
         edge_features = np.random.randn(3, 10)
 
@@ -109,16 +109,16 @@ def test_GINEcnoder():
     from deepchem.feat.graph_data import GraphData, BatchGraphData
     torch.manual_seed(123)
     num_gc_layers = 2
-    embedding_dim = 32
+    embedding_dim = 8
     num_nodes = 10
     num_graphs = 3
-    encoder = GINEncoder(num_features=25,
+    encoder = GINEncoder(num_features=5,
                          embedding_dim=embedding_dim,
                          num_gc_layers=num_gc_layers)
 
     data = []
     for i in range(num_graphs):
-        node_features = np.random.randn(num_nodes, 25)
+        node_features = np.random.randn(num_nodes, 5)
         edge_index = np.array([[0, 1, 2], [1, 2, 3]])
         edge_features = np.random.randn(3, 10)
 
@@ -143,14 +143,14 @@ def test_infographstar_regression_semisupervised():
     dataset, metric = get_regression_dataset()
     num_feat = 30
     edge_dim = 11
-    dim = 128
+    dim = 64
     model = InfoGraphStarModel(num_feat,
                                edge_dim,
                                dim,
                                num_gc_layers=2,
                                task='semisupervised')
 
-    model.fit(dataset, nb_epoch=100)
+    model.fit(dataset, nb_epoch=50)
     scores = model.evaluate(dataset, [metric])
     assert scores['mean_absolute_error'] < 0.2
 
