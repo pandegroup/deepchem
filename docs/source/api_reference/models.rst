@@ -265,6 +265,9 @@ GraphConvModel
 MPNNModel
 ---------
 
+.. warning::
+  This version of the MPNN Model is implemented with Keras and the WeaveFeaturizer. For a newer implementation using PyTorch and the MolGraphConvFeaturizer, refer to :ref:`torch_MPNN`
+  
 .. autoclass:: deepchem.models.MPNNModel
   :members:
 
@@ -422,6 +425,7 @@ AtomConvModel
 .. autoclass:: deepchem.models.torch_models.AtomConvModel
   :members:
 
+.. _torch_MPNN:
 MPNNModel
 ---------
 
