@@ -2581,7 +2581,7 @@ class DiskDataset(Dataset):
     @property
     def y(self) -> np.ndarray:
         """Get the y vector for this dataset as a single numpy array."""
-        if len(self) == 0:
+        if len(self) == 0 or len(self.get_task_names()) == 0:
             return np.array([])
         ys = []
         one_dimensional = False
