@@ -1,13 +1,19 @@
 """
 Tests to make sure deepchem models can fit models on easy datasets.
 """
+import unittest
 
+import numpy as np
 import sklearn
 import sklearn.datasets
-import numpy as np
+from sklearn.linear_model import (
+    LinearRegression,
+    LogisticRegression,
+    SGDClassifier,
+    SGDRegressor,
+)
+
 import deepchem as dc
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
 
 
 def test_sklearn_regression():
@@ -179,3 +185,91 @@ def test_sklearn_multitask_classification():
     # Eval model on test
     scores = model.evaluate(test_dataset, [classification_metric])
     assert scores[classification_metric.name] > .5
+
+
+def test_sklearn_fit_on_batch_regression():
+    """Test that sklearn models can learn on simple regression datasets using fit_on_batch."""
+    np.random.seed(123)
+    X, y = sklearn.datasets.make_regression(n_samples=100,
+                                            n_features=2,
+                                            noise=1,
+                                            random_state=123)
+    frac_train = .7
+    n_samples = len(X)
+    n_train = int(frac_train * n_samples)
+    X_train, y_train = X[:n_train], y[:n_train]
+    X_test, y_test = X[n_train:], y[n_train:]
+    train_dataset = dc.data.NumpyDataset(X_train, y_train)
+    test_dataset = dc.data.NumpyDataset(X_test, y_test)
+
+    regression_metric = dc.metrics.Metric(dc.metrics.r2_score)
+
+    sklearn_model = SGDRegressor()
+    model = dc.models.SklearnModel(sklearn_model)
+
+    # Fit model using fit_on_batch
+    batch_size = 64
+    for x, y, w, _ in train_dataset.iterbatches(batch_size=batch_size,
+                                                epochs=100):
+        model.fit_on_batch(x, y, w)
+    model.save()
+
+    # Eval model on test
+    scores = model.evaluate(test_dataset, [regression_metric])
+    assert scores[regression_metric.name] > .5
+
+
+def test_sklearn_fit_on_batch_classification():
+    """Test that sklearn models can learn on simple classification datasets using fit_on_batch."""
+    np.random.seed(123)
+    dataset = sklearn.datasets.load_breast_cancer()
+    X, y = dataset.data, dataset.target
+
+    frac_train = .7
+    n_samples = len(X)
+    n_train = int(frac_train * n_samples)
+    X_train, y_train = X[:n_train], y[:n_train]
+    X_test, y_test = X[n_train:], y[n_train:]
+    train_dataset = dc.data.NumpyDataset(X_train, y_train)
+    test_dataset = dc.data.NumpyDataset(X_test, y_test)
+
+    classification_metric = dc.metrics.Metric(dc.metrics.roc_auc_score)
+    sklearn_model = SGDClassifier()
+    model = dc.models.SklearnModel(sklearn_model)
+
+    # Fit model using fit_on_batch
+    classes = np.unique(y)
+    batch_size = 64
+    for x, y, w, _ in train_dataset.iterbatches(batch_size=batch_size):
+        model.fit_on_batch(x, y, w, classes=classes)
+    model.save()
+
+    # Eval model on test
+    scores = model.evaluate(test_dataset, [classification_metric])
+    assert scores[classification_metric.name] > .5
+
+
+class TestSklearnErrors(unittest.TestCase):
+
+    def test_sklearn_fit_on_batch_attribute_error(self):
+        """Test that the appropriate error is raised when fit_on_batch() is called when using a model that does not implement partial_fit()"""
+        with self.assertRaises(AttributeError):
+            np.random.seed(123)
+            # dummy values
+            X = np.random.randn(10)
+            y = np.ones(10)
+            # linear regression has no "partial_fit"
+            sklearn_model = LinearRegression()
+            model = dc.models.SklearnModel(sklearn_model)
+            model.fit_on_batch(X, y)
+
+    def test_sklearn_fit_on_batch_value_error(self):
+        """Test that the appropriate error is raised when fit_on_batch() is called without classes for classification model"""
+        with self.assertRaises(ValueError):
+            np.random.seed(123)
+            # dummy values
+            X = np.random.randn(10)
+            y = np.ones(10)
+            sklearn_model = SGDClassifier()
+            model = dc.models.SklearnModel(sklearn_model)
+            model.fit_on_batch(X, y)

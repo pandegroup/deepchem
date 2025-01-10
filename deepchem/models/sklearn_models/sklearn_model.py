@@ -6,10 +6,10 @@ import logging
 from typing import List, Optional
 
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, is_classifier
 
-from deepchem.models import Model
 from deepchem.data import Dataset
+from deepchem.models import Model
 from deepchem.trans import Transformer
 from deepchem.utils.data_utils import load_from_disk, save_to_disk
 from deepchem.utils.typing import OneOrMany
@@ -65,6 +65,8 @@ class SklearnModel(Model):
         kwargs: dict
             kwargs['use_weights'] is a bool which determines if we pass weights into
             self.model.fit().
+            kwargs['is_classifier'] is a bool which determines if we pass classes
+            to self.model.fit_on_batch().
         """
         if 'model_instance' in kwargs:
             model_instance = kwargs['model_instance']
@@ -91,6 +93,11 @@ class SklearnModel(Model):
                 logger.info("The model does not support training with weights."
                             "Hence, not using weight of datapoint for training")
 
+        if 'is_classifier' in kwargs:
+            self.is_classifier = kwargs['is_classifier']
+        else:
+            self.is_classifier = is_classifier(model)
+
     def fit(self, dataset: Dataset) -> None:
         """Fits scikit-learn model to data.
 
@@ -107,6 +114,46 @@ class SklearnModel(Model):
             self.model.fit(X, y, w)
             return
         self.model.fit(X, y)
+
+    def fit_on_batch(self,
+                     X: np.typing.ArrayLike,
+                     y: np.typing.ArrayLike,
+                     w: Optional[np.typing.ArrayLike] = None,
+                     classes: Optional[np.typing.ArrayLike] = None):
+        """Perform a single step of training.
+
+        Parameters
+        ----------
+        X: np.ndarray
+            the inputs for the batch
+        y: np.ndarray
+            the labels for the batch
+        w: np.ndarray (Optional, Default None)
+            the weights for the batch
+        classes: np.ndarray (Optional, Default None)
+            model classes, must be provided if model being used for classification.
+
+        Raises
+        ------
+        ValueError: If model being used for classification and classes not provided.
+        AttributeError: If model does not implement partial_fit.
+        """
+        if self.is_classifier and classes is None:
+            raise ValueError(
+                "Must provide classes if using a classification model")
+        try:
+            if self.is_classifier and self.use_weights:
+                self.model.partial_fit(X, y, classes=classes, sample_weight=w)
+            elif self.is_classifier:
+                self.model.partial_fit(X, y, classes=classes)
+            elif self.use_weights:
+                self.model.partial_fit(X, y, sample_weight=w)
+            else:
+                self.model.partial_fit(X, y)
+        except AttributeError:
+            raise AttributeError(
+                f"The scikit-learn model {self.model} does not implement partial_fit, and thus cannot be used with fit_on_batch"
+            )
 
     def predict_on_batch(self, X: np.typing.ArrayLike) -> np.ndarray:
         """Makes predictions on batch of data.
