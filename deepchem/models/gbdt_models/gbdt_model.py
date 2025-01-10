@@ -70,13 +70,13 @@ class GBDTModel(SklearnModel):
 
         if self.model.__class__.__name__.startswith('XGB'):
             self.callbacks = [
-                xgboost.callback.EarlyStopping(
+                xgboost.callback.EarlyStopping(  # type: ignore
                     rounds=self.early_stopping_rounds)
             ]
             self.model.callbacks = self.callbacks
         elif self.model.__class__.__name__.startswith('LGBM'):
             self.callbacks = [
-                lightgbm.early_stopping(
+                lightgbm.early_stopping(  # type: ignore
                     stopping_rounds=self.early_stopping_rounds),
             ]
 
