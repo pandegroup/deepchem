@@ -4,7 +4,7 @@ Installation
 Stable version
 --------------
 
-Install deepchem via pip or conda by simply running,
+Install DeepChem via pip or conda by simply running,
 
 .. code-block:: bash
 
@@ -20,7 +20,7 @@ Nightly build version
 ---------------------
 The nightly version is built by the HEAD of DeepChem.
 
-For using general utilites like Molnet, Featurisers, Datasets, etc, then, you install deepchem via pip.  
+For using general utilites like Molnet, Featurisers, Datasets, etc, then, you install DeepChem via pip.  
 
 .. code-block:: bash
 
@@ -47,7 +47,7 @@ For using models with Jax dependencies, you install using
 
     pip install --pre deepchem[jax]
 
-If GPU support is required, then make sure CUDA is installed and then install the desired deep learning framework using the links below before installing deepchem
+If GPU support is required, then make sure CUDA is installed and then install the desired deep learning framework using the links below before installing DeepChem
 
 1. tensorflow - just cuda installed
 2. pytorch - https://pytorch.org/get-started/locally/#start-locally
@@ -75,7 +75,7 @@ you can pull two kinds of images from `DockerHub`_.
 
 - **deepchemio/deepchem:x.x.x**
 
-  - Image built by using a conda (x.x.x is a version of deepchem)
+  - Image built by using a conda (x.x.x is a version of DeepChem)
   - This image is built when we push x.x.x. tag
   - Dockerfile is put in `docker/tag`_ directory
 
@@ -109,7 +109,7 @@ If you want GPU support:
     # If nvidia-container-toolkit is installed
     docker run --gpus all --rm -it deepchemio/deepchem:latest
 
-You are now in a docker container which deepchem was installed.
+You are now in a docker container which DeepChem was installed.
 You can start playing with it in the command line.
 
 .. code-block:: bash
@@ -172,7 +172,7 @@ From source with conda
 - Conda: >4.6
 
 
-First, please clone the deepchem repository from GitHub.
+First, please clone the DeepChem repository from GitHub.
 
 .. code-block:: bash
 
@@ -209,7 +209,7 @@ If you are using the Windows and the PowerShell:
 
     powershell -executionpolicy bypass -File .\scripts\install_deepchem_conda.ps1 3.10 cpu
 
-| Before activating deepchem environment, make sure conda has been initialized.
+| Before activating DeepChem environment, make sure conda has been initialized.
 | Check if there is a :code:`(XXXX)` in your command line. 
 | If not, use :code:`conda init <YOUR_SHELL_NAME>` to activate it, then:
 
@@ -231,7 +231,7 @@ From source lightweight guide
 - Conda: >4.6
 
 
-First, please clone the deepchem repository from GitHub.
+First, please clone the DeepChem repository from GitHub.
 
 .. code-block:: bash
 

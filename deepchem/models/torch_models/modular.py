@@ -92,7 +92,11 @@ class ModularTorchModel(TorchModel):
 
     def build_model(self) -> nn.Module:
         """Builds the final model from the components."""
-        raise NotImplementedError("Subclass must define the components")
+        layers = []
+        for layer in self.components.values():
+            layers.append(layer)
+        
+        return nn.Sequential(*layers)
 
     def build_components(self) -> dict:
         """Creates the components dictionary, with the keys being the names of the
