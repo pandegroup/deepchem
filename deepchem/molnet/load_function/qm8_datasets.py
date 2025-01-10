@@ -56,7 +56,7 @@ def load_qm8(
 
     S0 -> S2 transition energy E2 and the corresponding oscillator strength f2
 
-    E1, E2, f1, f2 are in atomic units. f1, f2 are in length representation
+    E1, E2 are in atomic units. f1, f2 are in length representation
 
     Random splitting is recommended for this dataset.
 
