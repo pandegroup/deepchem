@@ -40,7 +40,7 @@ class DFTXC(torch.nn.Module):
 
     """
 
-    def __init__(self, xcstr: str, nnmodel: torch.nn.Module):
+    def __init__(self, xcstr: str, nnmodel: torch.nn.Module, aweight0: float = 0.0, bweight0: float = 1.0):
         """
         Parameters
         ----------
@@ -57,6 +57,8 @@ class DFTXC(torch.nn.Module):
         super(DFTXC, self).__init__()
         self.xcstr = xcstr
         self.nnmodel = nnmodel
+        self.aweight0 = aweight0
+        self.bweight0 = bweight0
 
     def forward(self, inputs):
         """
@@ -71,7 +73,7 @@ class DFTXC(torch.nn.Module):
             Calculated value of the data point after running the Kohn Sham iterations
             using the neural network XC functional.
         """
-        hybridxc = HybridXC(self.xcstr, self.nnmodel, aweight0=0.0)
+        hybridxc = HybridXC(self.xcstr, self.nnmodel, aweight0=self.aweight0, bweight0=self.bweight0)
         output = []
         for entry in inputs:
             evl = XCNNSCF(hybridxc, entry)
@@ -140,6 +142,8 @@ class XCModel(TorchModel):
                  modeltype: int = 1,
                  n_tasks: int = 0,
                  log_frequency: int = 0,
+                 aweight0: float = 0.0,
+                 bweight0: float = 1.0,
                  mode: str = 'classification',
                  device: Optional[torch.device] = None,
                  **kwargs) -> None:
@@ -163,7 +167,7 @@ class XCModel(TorchModel):
         if nnmodel is None:
             nnmodel = _construct_nn_model(input_size, hidden_size, n_layers,
                                           modeltype).to(torch.double)
-        model = (DFTXC(xcstr, nnmodel)).to(device)
+        model = (DFTXC(xcstr, nnmodel, aweight0, bweight0)).to(device)
         self.xc = xcstr
         loss: Loss = L2Loss()
         output_types = ['loss', 'predict']

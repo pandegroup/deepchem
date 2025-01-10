@@ -7,15 +7,11 @@ from abc import abstractmethod, abstractproperty
 from typing import List, Dict, Optional
 import numpy as np
 import warnings
-
-# dqc dependencies
 try:
-    from dqc.system.mol import Mol
-    from dqc.system.base_system import BaseSystem
     from deepchem.utils.dftutils import KSCalc
-    from deepchem.utils.dft_utils import parse_moldesc, BaseGrid
+    from deepchem.utils.dft_utils import Mol, BaseSystem, parse_moldesc, BaseGrid
 except Exception as e:
-    warnings.warn(f"Failed to import DQC dependencies with error: {e}")
+    warnings.warn(e)
 
 
 class DFTSystem():
@@ -75,7 +71,8 @@ class DFTSystem():
         atomzs, atomposs = parse_moldesc(self.moldesc)
         if pos_reqgrad:
             atomposs.requires_grad_()
-        mol = Mol(self.moldesc, self.basis, spin=self.spin, charge=self.charge)
+        mol = Mol(self.moldesc, self.basis, spin=self.spin,
+                  charge=self.charge)  # type: ignore[abstract]
         return mol
 
 

@@ -6,7 +6,7 @@ except Exception as e:
     warnings.warn("Could not import torch. Skipping tests." + str(e))
 
 
-@pytest.mark.dqc
+@pytest.mark.torch
 def test_scf():
     from deepchem.models.dft.scf import XCNNSCF
     from deepchem.models.dft.nnxc import HybridXC
