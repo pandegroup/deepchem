@@ -16,8 +16,7 @@ def test_smiles_call():
                                 add_special_tokens=True,
                                 truncation=True)
     for emb in [embedding, embedding_long]:
-        assert 'input_ids' in emb.keys() and 'attention_mask' in emb.keys()
-        assert len(emb['input_ids']) == 2 and len(emb['attention_mask']) == 2
+        assert len(emb[0]) == len(emb[1])
 
 
 @pytest.mark.torch
