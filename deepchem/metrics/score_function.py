@@ -13,7 +13,7 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import auc
 from sklearn.metrics import jaccard_score
 from sklearn.metrics import f1_score
-from sklearn.metrics import roc_auc_score  # noqa
+from sklearn.metrics import roc_auc_score as ras  # noqa
 from sklearn.metrics import accuracy_score  # noqa
 from sklearn.metrics import balanced_accuracy_score  # noqa
 from sklearn.metrics import top_k_accuracy_score  # noqa
@@ -233,3 +233,31 @@ def concordance_index(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     assert pairs > 0, 'No pairs for comparision'
 
     return correct_pairs / pairs
+
+
+def roc_auc_score(y_true: np.ndarray, y_score: np.ndarray) -> float:
+    """Computes the Area under the Receiving Operating Characteristic Curve (ROC AUC) from the predicted scores.
+
+    Parameters:
+    ----------
+        y_true (np.ndarray):
+        Corresponds to the true labels or ground truth labels.
+        The shape of the array can be [n_samples, n_classes] or [n_samples, ] depending on the type of the classifier.
+        y_score (np.ndarray):
+        Corresponds to an array of probability estimates which are the probability of the sample for a given class.
+        The shape of the array can be [n_samples, n_classes] or [n_samples, ] depending on the type of the classifier.
+
+    Returns:
+    -------
+        float:
+        The ROC AUC score.
+    """
+
+    # validation
+    assert len(y_true) == len(y_score), 'Number of examples do not match'
+    if len(y_score.shape) == 2:
+        for row in y_score:
+            assert np.isclose(np.sum(row), 1.0), 'Probabilities do not sum to 1'
+            assert np.all(row >= 0.0), 'Probabilities are negative'
+
+    return ras(y_true, y_score, multi_class='ovr')
