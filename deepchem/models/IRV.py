@@ -5,12 +5,26 @@ from deepchem.models import KerasModel, layers
 from deepchem.models.losses import SigmoidCrossEntropy
 from tensorflow.keras.layers import Input, Layer, Activation, Concatenate, Lambda
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-class IRVLayer(Layer):
+class IRVLayer(nn.Module):
     """ Core layer of IRV classifier, architecture described in:
     https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2750043/
+    
+    The paper introduces the Influence Relevance Voter (IRV), a novel machine learning model 
+    designed for virtual high-throughput screening (vHTS).vHTS predicts the biological activity 
+    of chemical compounds using computational methods, reducing the need for expensive experimental
+    screening.
+    
+    The IRV model extends the k-Nearest Neighbors (kNN) algorithm by improving how neighbors 
+    influence predictions. Instead of treating all neighbors equally, IRV assigns each neighbor
+    a relevance score based on its similarity to the query compound.This similarity is calculated
+    using molecular fingerprint comparisons between the query compound and its neighbors,allowing
+    more relevant neighbors to have a greater impact on the prediction.
     """
-
+    
     def __init__(self, n_tasks, K, penalty, **kwargs):
         """
         Parameters
@@ -28,33 +42,38 @@ class IRVLayer(Layer):
         super(IRVLayer, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        self.V = tf.Variable(tf.constant([0.01, 1.]),
-                             name="vote",
-                             dtype=tf.float32)
-        self.W = tf.Variable(tf.constant([1., 1.]), name="w", dtype=tf.float32)
-        self.b = tf.Variable(tf.constant([0.01]), name="b", dtype=tf.float32)
-        self.b2 = tf.Variable(tf.constant([0.01]), name="b2", dtype=tf.float32)
+        """ 
+        Initializes the trainable parameters for the voting mechanism 
+        """
+        self.V = nn.Parameter(torch.tensor([0.01, 1.], dtype=torch.float32), requires_grad=True)
+        self.W = nn.Parameter(torch.tensor([1., 1.], dtype=torch.float32), requires_grad=True)
+        self.b = nn.Parameter(torch.tensor([0.01], dtype=torch.float32), requires_grad=True)
+        self.b2 = nn.Parameter(torch.tensor([0.01], dtype=torch.float32), requires_grad=True)
 
     def call(self, inputs):
+        """
+        Processes the input data and computes the relevance and influence of neighbors
+        """
+
         K = self.K
         outputs = []
+
         for count in range(self.n_tasks):
-            # Similarity values
+            
             similarity = inputs[:, 2 * K * count:(2 * K * count + K)]
-            # Labels for all top K similar samples
-            ys = tf.cast(inputs[:, (2 * K * count + K):2 * K * (count + 1)],
-                         tf.int32)
+            
+            ys = inputs[:, (2 * K * count + K):2 * K * (count + 1)].long()
 
-            R = self.b + self.W[0] * similarity + self.W[1] * tf.constant(
-                np.arange(K) + 1, dtype=tf.float32)
-            R = tf.sigmoid(R)
-            z = tf.reduce_sum(R * tf.gather(self.V, ys), axis=1) + self.b2
-            outputs.append(tf.reshape(z, shape=[-1, 1]))
-        loss = (tf.nn.l2_loss(self.W) + tf.nn.l2_loss(self.V) +
-                tf.nn.l2_loss(self.b) + tf.nn.l2_loss(self.b2)) * self.penalty
+            R = self.b + self.W[0] * similarity + self.W[1] * torch.arange(1, K + 1, dtype=torch.float32, device=inputs.device)
+            R = torch.sigmoid(R)
+
+            z = torch.sum(R * self.V[ys], dim=1) + self.b2
+            outputs.append(z.view(-1, 1))
+            
+        loss = self.penalty * (torch.norm(self.W, 2) + torch.norm(self.V, 2) + torch.norm(self.b, 2) + torch.norm(self.b2, 2))
         self.add_loss(loss)
-        return tf.concat(outputs, axis=1)
-
+        output = torch.cat(outputs, dim=1)
+        return output
 
 class Slice(Layer):
     """ Choose a slice of input on the last axis given order,
