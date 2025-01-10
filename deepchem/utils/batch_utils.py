@@ -1,14 +1,18 @@
 """
 Utility Functions for computing features on batch.
 """
+
+from typing import Any, Collection, Dict, List
+
 import numpy as np
-from typing import Any, Dict, Collection, List
 
 
-def batch_coulomb_matrix_features(X_b: np.ndarray,
-                                  distance_max: float = -1,
-                                  distance_min: float = 18,
-                                  n_distance: int = 100):
+def batch_coulomb_matrix_features(
+    X_b: np.ndarray,
+    distance_max: float = -1,
+    distance_min: float = 18,
+    n_distance: int = 100,
+):
     """Computes the values for different Feature on given batch.
     It works as a helper function to coulomb matrix.
 
@@ -16,19 +20,24 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
 
     It proceeds as follows:
 
-    - It calculates the Number of atoms per molecule by counting all the non zero elements(numbers) of every\
-    molecule layer in matrix in one dimension.
+    - It calculates the Number of atoms per molecule by counting all the non
+    zero elements(numbers) of every molecule layer in matrix in one dimension.
 
-    - The Gaussian distance is calculated using the Euclidean distance between the Cartesian coordinates of two atoms.\
-    The distance value is then passed through a Gaussian function, which transforms it into a continuous value.
+    - The Gaussian distance is calculated using the Euclidean distance between
+    the Cartesian coordinates of two atoms. The distance value is then passed
+    through a Gaussian function, which transforms it into a continuous value.
 
-    - Then using number of atom per molecule, calculates the atomic charge by looping over the molecule layer in the Coulomb matrix\
-    and takes the `2.4` root of the diagonal of `2X` of each molecule layer. `Undoing the Equation of coulomb matrix.`
+    - Then using number of atom per molecule, calculates the atomic charge by
+    looping over the molecule layer in the Coulomb matrix and takes the `2.4`
+    root of the diagonal of `2X` of each molecule layer. `Undoing the Equation
+    of coulomb matrix.`
 
-    - Atom_membership is assigned as a commomn repeating integers for all the atoms for a specific molecule.
+    - Atom_membership is assigned as a commomn repeating integers for all the
+    atoms for a specific molecule.
 
-    - Distance Membership encodes spatial information, assigning closer values to atoms that are in that specific molecule.\
-    All initial Distances are added a start value to them which are unique to each molecule.
+    - Distance Membership encodes spatial information, assigning closer values
+    to atoms that are in that specific molecule. All initial Distances are
+    added a start value to them which are unique to each molecule.
 
     Models Used in:
 
@@ -37,7 +46,8 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
     Parameters
     ----------
     X_b: np.ndarray
-        It is a 3d Matrix containing information of each the atom's ionic interaction with other atoms in the molecule.
+        It is a 3d Matrix containing information of each the atom's ionic
+        interaction with other atoms in the molecule.
     distance_min: float (default -1)
         minimum distance of atom pairs (in Angstrom)
     distance_max: float (default = 18)
@@ -49,23 +59,35 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
     Returns
     -------
     atom_number: np.ndarray
-        Atom numbers are assigned to each atom based on their atomic properties.
+        Atom numbers are assigned to each atom based on their atomic properties
         The atomic numbers are derived from the periodic table of elements.
         For example, hydrogen -> 1, carbon -> 6, and oxygen -> 8.
     gaussian_dist: np.ndarray
-        Gaussian distance refers to the method of representing the pairwise distances between atoms in a molecule using Gaussian functions.
-        The Gaussian distance is calculated using the Euclidean distance between the Cartesian coordinates of two atoms.
-        The distance value is then passed through a Gaussian function, which transforms it into a continuous value.
+        Gaussian distance refers to the method of representing the pairwise
+        distances between atoms in a molecule using Gaussian functions. The
+        Gaussian distance is calculated using the Euclidean distance between
+        the Cartesian coordinates of two atoms. The distance value is then
+        passed through a Gaussian function, which transforms it into a
+        continuous value.
     atom_mem: np.ndarray
-        Atom membership refers to the binary representation of whether an atom belongs to a specific group or property within a molecule.
-        It allows the model to incorporate domain-specific information and enhance its understanding of the molecule's properties and interactions.
+        Atom membership refers to the binary representation of whether an atom
+        belongs to a specific group or property within a molecule. It allows
+        the model to incorporate domain-specific information and enhance its
+        understanding of the molecule's properties and interactions.
     dist_mem_i: np.ndarray
-        Distance membership i are utilized to encode spatial information and capture the influence of atom distances on the properties and interactions within a molecule.
-        The inner membership function assigns higher values to atoms that are closer to the atoms' interaction region, thereby emphasizing the impact of nearby atoms.
+        Distance membership i are utilized to encode spatial information and
+        capture the influence of atom distances on the properties and
+        interactions within a molecule. The inner membership function assigns
+        higher values to atoms that are closer to the atoms' interaction
+        region, thereby emphasizing the impact of nearby atoms.
     dist_mem_j: np.ndarray
-        It captures the long-range effects and influences between atoms that are not in direct proximity but still contribute to the overall molecular properties.
-        Distance membership j are utilized to encode spatial information and capture the influence of atom distances on the properties and interactions outside a molecule.
-        The outer membership function assigns higher values to atoms that are farther to the atoms' interaction region, thereby emphasizing the impact of farther atoms.
+        It captures the long-range effects and influences between atoms that
+        are not in direct proximity but still contribute to the overall
+        molecular properties. Distance membership j are utilized to encode
+        spatial information and capture the influence of atom distances on the
+        properties and interactions outside a molecule. The outer membership
+        function assigns higher values to atoms that are farther to the atoms'
+        interaction region, thereby emphasizing the impact of farther atoms.
 
     Examples
     --------
@@ -83,8 +105,8 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
     References
     ----------
     .. [1] Montavon, Grégoire, et al. "Learning invariant representations of
-        molecules for atomization energy prediction." Advances in neural information
-        processing systems. 2012.
+        molecules for atomization energy prediction." Advances in neural
+        information processing systems. 2012.
 
     """
     distance = []
@@ -97,10 +119,12 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
     steps = np.array([distance_min + i * step_size for i in range(n_distance)])
     steps = np.expand_dims(steps, 0)
 
-    # Number of atoms per molecule is calculated by counting all the non zero elements(numbers) of every molecule.
+    # Number of atoms per molecule is calculated by counting all the non zero
+    # elements(numbers) of every molecule.
     num_atoms = list(map(sum, X_b.astype(bool)[:, :, 0]))
 
-    # It loops over the molecules in the Coulomb matrix and takes the "2.4" root of the diagonal of "2X" of each molecule's representation.
+    # It loops over the molecules in the Coulomb matrix and takes the "2.4"
+    # root of the diagonal of "2X" of each molecule's representation.
     atom_number = [
         np.round(
             np.power(2 * np.diag(X_b[i, :num_atoms[i], :num_atoms[i]]),
@@ -108,13 +132,13 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
     ]
     start = 0
     for im, molecule in enumerate(atom_number):
-        distance_matrix = np.outer(
-            molecule, molecule) / X_b[im, :num_atoms[im], :num_atoms[im]]
+        distance_matrix = (np.outer(molecule, molecule) /
+                           X_b[im, :num_atoms[im], :num_atoms[im]])
         np.fill_diagonal(distance_matrix, -100)
         distance.append(np.expand_dims(distance_matrix.flatten(), 1))
         atom_membership.append([im] * num_atoms[im])
         membership = np.array([np.arange(num_atoms[im])] * num_atoms[im])
-        membership_i = membership.flatten(order='F')
+        membership_i = membership.flatten(order="F")
         membership_j = membership.flatten()
         distance_membership_i.append(membership_i + start)
         distance_membership_j.append(membership_j + start)
@@ -122,7 +146,7 @@ def batch_coulomb_matrix_features(X_b: np.ndarray,
     atom_number = np.concatenate(atom_number).astype(np.int32)
     distance = np.concatenate(distance, axis=0)
 
-    # Calculates the Gaussian Distance by passing distance by a gaussian function.
+    # Calculates Gaussian Distance by passing distance by a gaussian function.
     gaussian_dist = np.exp(-np.square(distance - steps) / (2 * step_size**2))
     gaussian_dist = gaussian_dist.astype(np.float64)
     atom_mem = np.concatenate(atom_membership).astype(np.int64)
@@ -168,9 +192,14 @@ def batch_elements(elements: List[Any], batch_size: int):
         yield batch
 
 
-def create_input_array(sequences: Collection, max_input_length: int,
-                       reverse_input: bool, batch_size: int, input_dict: Dict,
-                       end_mark: Any):
+def create_input_array(
+    sequences: Collection,
+    max_input_length: int,
+    reverse_input: bool,
+    batch_size: int,
+    input_dict: Dict,
+    end_mark: Any,
+):
     """Create the array describing the input sequences.
 
     It creates a 2d Matrix empty matrix according to batch size and max_length.
@@ -200,7 +229,8 @@ def create_input_array(sequences: Collection, max_input_length: int,
         List of sequences to be converted into input array.
     reverse_input: bool
         If True, reverse the order of input sequences before sending them into
-        the encoder. This can improve performance when working with long sequences.
+        the encoder. This can improve performance when working with long
+        sequences.
     batch_size: int
         Batch size of the input array.
     input_dict: dict
@@ -223,14 +253,14 @@ def create_input_array(sequences: Collection, max_input_length: int,
     >>> max_length = max([len(x) for x in inputs])
     >>> # Without reverse input
     >>> output_1 = dc.utils.batch_utils.create_input_array(inputs, max_length,
-    ...                                                    False, 2, input_dict,
-    ...                                                    "c")
+    ...                                                 False, 2, input_dict,
+    ...                                                 "c")
     >>> output_1.shape
     (2, 4)
     >>> # With revercse input
     >>> output_2 = dc.utils.batch_utils.create_input_array(inputs, max_length,
-    ...                                                    True, 2, input_dict,
-    ...                                                    "c")
+    ...                                                 True, 2, input_dict,
+    ...                                                 "c")
     >>> output_2.shape
     (2, 4)
 
@@ -246,8 +276,13 @@ def create_input_array(sequences: Collection, max_input_length: int,
     return features
 
 
-def create_output_array(sequences: Collection, max_output_length: int,
-                        batch_size: int, output_dict: Dict, end_mark: Any):
+def create_output_array(
+    sequences: Collection,
+    max_output_length: int,
+    batch_size: int,
+    output_dict: Dict,
+    end_mark: Any,
+):
     """Create the array describing the target sequences.
 
     It creates a 2d Matrix empty matrix according to batch size and max_length.
@@ -295,8 +330,8 @@ def create_output_array(sequences: Collection, max_output_length: int,
     >>> output_dict = {"c": 0, "a": 1, "b": 2}
     >>> # Inputs property
     >>> max_length = max([len(x) for x in inputs])
-    >>> output = dc.utils.batch_utils.create_output_array(inputs, max_length, 2,
-    ...                                                   output_dict, "c")
+    >>> output = dc.utils.batch_utils.create_output_array(inputs, max_length,
+    ...                                                   2, output_dict, "c")
     >>> output.shape
     (2, 3)
 
