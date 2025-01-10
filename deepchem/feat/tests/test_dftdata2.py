@@ -7,7 +7,7 @@ except Exception as e:
     warnings.warn("Could not import torch. Skipping tests. Error is: " + str(e))
 
 
-@pytest.mark.dqc
+@pytest.mark.torch
 def test_multiatom():
     from deepchem.data.data_loader import DFTYamlLoader
     from deepchem.models.dft.scf import XCNNSCF

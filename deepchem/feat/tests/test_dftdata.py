@@ -1,17 +1,16 @@
 import pytest
+import numpy as np
 try:
     from deepchem.feat.dft_data import DFTEntry
-    from dqc.qccalc.ks import KS
     from deepchem.utils.dftutils import KSCalc
+    from deepchem.utils.dft_utils import KS
     import torch
-    has_dqc = True
+    has_dft_req = True
 except:
-    has_dqc = False
-
-import numpy as np
+    has_dft_req = False
 
 
-@pytest.mark.dqc
+@pytest.mark.torch
 def test_entryDM():
     e_type = 'dm'
     true_val = 'deepchem/feat/tests/data/dftHF_output.npy'
@@ -32,7 +31,7 @@ def test_entryDM():
     assert dm0.shape == (57, 57)
 
 
-@pytest.mark.dqc
+@pytest.mark.torch
 def test_entryAE():
     e_type = 'ae'
     true_val = '0.09194410469'
