@@ -24,3 +24,4 @@ InfoMax3DModular,`ref <https://arxiv.org/abs/2110.04126>`_,Unsupervised,RDKitCon
 Chemberta, `ref <https://arxiv.org/abs/2209.01712>`_,Classifier/ Regressor, RobertaTokenizer, PyTorch
 MoLFormer, `ref <https://arxiv.org/pdf/2106.09553>`_,Classifier/ Regressor, DummyFeaturizer, PyTorch
 ProgressiveMultitaskModel, `ref <https://arxiv.org/abs/1606.04671>`_,Classifier/ Regressor, CircularFingerprint RDKitDescriptors CoulombMatrixEig RdkitGridFeaturizer BindingPocketFeaturizer ElementPropertyFingerprint,PyTorch
+MolPropModel, `ref <https://pubs.acs.org/doi/10.1021/acscentsci.1c00546>`_,Classifier/ Regressor, RobertaTokenizer, PyTorch
