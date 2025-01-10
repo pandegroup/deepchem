@@ -112,7 +112,7 @@ Evaluation Utils
 .. autofunction:: deepchem.utils.evaluate.relative_difference
 
 
-Genomic Utilities
+Sequence Utilities
 -----------------
 
 .. autofunction:: deepchem.utils.genomics_utils.seq_one_hot_encode
@@ -125,6 +125,9 @@ Genomic Utilities
 
 .. autofunction:: deepchem.utils.sequence_utils.MSA_to_dataset
 
+.. autoclass:: deepchem.utils.jackhmmer.Jackhmmer
+  :members:
+  :inherited-members:
 
 Geometry Utilities
 ------------------
