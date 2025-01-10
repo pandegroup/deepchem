@@ -694,6 +694,67 @@ def test_merge():
     assert len(new_data.tasks) == len(datasets[0].tasks)
 
 
+def test_disk_cache():
+    """Test that disk cache works."""
+    shard_sizes = [10, 20, 30, 40, 50, 60]  # 6 shards total
+    num_features = 10
+    num_tasks = 4
+
+    def shard_generator():
+        for sz in shard_sizes:
+            X_b = np.random.rand(sz, num_features)
+            y_b = np.random.rand(sz, num_tasks)
+            w_b = np.random.rand(sz, num_tasks)
+            ids_b = np.random.rand(sz)
+
+            yield X_b, y_b, w_b, ids_b
+
+    # Tests with cache_data = True
+    # By default the cache_data is True, so the dataset will cache the data
+    dataset = dc.data.DiskDataset.create_dataset(shard_generator())
+
+    # Test that the cache is initially empty
+    assert dataset._cached_shards is None
+
+    shards_to_test = 3
+
+    # Test that the cache is populated
+    for i, (X, y, w, ids) in enumerate(dataset.itershards()):
+        assert np.array_equal(X, dataset._cached_shards[i].X)
+        assert np.array_equal(y, dataset._cached_shards[i].y)
+        assert np.array_equal(w, dataset._cached_shards[i].w)
+        assert np.array_equal(ids, dataset._cached_shards[i].ids)
+
+        # we are only testing for the first 3 shards
+        # this will work only if the first three shards are small enough to fit in the cache
+        if i + 1 == shards_to_test:
+            break
+
+    # Test the memory cache size
+    memory_used = 0
+    for i, (X, y, w, ids) in enumerate(dataset.itershards()):
+        memory_used += X.nbytes + y.nbytes + w.nbytes + ids.nbytes
+
+        if i + 1 == shards_to_test:
+            break
+
+    assert dataset._cache_used == memory_used
+
+    # Test that the cache is cleared
+    dataset.cache_data = False
+    assert dataset._cached_shards is None
+
+    # Tests with cache_data = False
+    dataset2 = dc.data.DiskDataset(dataset.data_dir, cache_data=False)
+
+    # Test that the cache is initially empty
+    assert dataset2._cached_shards is None
+
+    # Test that the cache is not populated
+    for i, (X, y, w, ids) in enumerate(dataset2.itershards()):
+        assert dataset2._cached_shards[i] is None
+
+
 @pytest.mark.tensorflow
 def test_make_tf_dataset():
     """Test creating a Tensorflow Iterator from a Dataset."""
