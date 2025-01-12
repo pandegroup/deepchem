@@ -29,7 +29,7 @@ def test_pinns_overfit():
 def test_pinn_default_model():
     """Test if default model works correctly"""
     x = torch.tensor([[1.0, 0.0], [0.0, 1.0]])
-    pinn = PINNModel(in_channels=x.shape[1])
+    pinn = PINNModel(in_features=x.shape[1])
 
     assert pinn.model is not None, "Default model is not initialized"
     output = pinn.predict(x)
