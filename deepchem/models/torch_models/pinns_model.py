@@ -125,11 +125,13 @@ class PINNModel(TorchModel):
                 model = MultilayerPerceptron(
                     d_input=in_features,
                     d_hidden=(32, 64, 128, 256, 512),
-                    d_output=1)  # Regression by default
+                    d_output=1,
+                    activation_fn='tanh')  # Regression by default
             else:
                 model = MultilayerPerceptron(in_features=1,
                                              d_hidden=(32, 64, 128, 256, 512),
-                                             d_output=1)
+                                             d_output=1,
+                                             activation_fn='tanh')
 
         if not isinstance(pde_fn, list):
             pde_fn = [pde_fn]
