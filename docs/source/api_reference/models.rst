@@ -576,6 +576,12 @@ TextCNNModel
 .. autoclass:: deepchem.models.torch_models.TextCNNModel
   :members:
 
+PINNModel
+---------
+
+.. autoclass:: deepchem.models.torch_models.PINNModel
+  :members:
+
 UNetModel
 ------------
 
