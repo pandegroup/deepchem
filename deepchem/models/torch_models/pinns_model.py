@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Callable, Dict, List, Optional, Union
 from deepchem.models.torch_models.torch_model import TorchModel
+from deepchem.models.torch_models.layers import MultilayerPerceptron
 import logging
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ class PINNModel(TorchModel):
         Parameters
         ----------
         model : nn.Module, optional
-            PyTorch neural network model for training. If not provided, a default neural network is used.
+            PyTorch neural network model for training. If not provided, a default neural network is used for regression.
         in_features : int, optional
             Number of input features for the default model. Ignored if a custom model is provided.
         loss_fn : Callable
@@ -121,9 +122,14 @@ class PINNModel(TorchModel):
 
         if model is None:
             if in_features is not None:
-                model = NeuralNet(in_features=in_features)
+                model = MultilayerPerceptron(
+                    d_input=in_features,
+                    d_hidden=(32, 64, 128, 256, 512),
+                    d_output=1)  # Regression by default
             else:
-                model = NeuralNet(in_features=1)
+                model = MultilayerPerceptron(in_features=1,
+                                             d_hidden=(32, 64, 128, 256, 512),
+                                             d_output=1)
 
         if not isinstance(pde_fn, list):
             pde_fn = [pde_fn]
@@ -278,37 +284,3 @@ class PINNModel(TorchModel):
         Predicted values
         """
         return self.eval_fn(dataset)
-
-
-class NeuralNet(nn.Module):
-    """
-    A simple feedforward neural network used as the default model for PINNModel.
-
-    The network consists of three fully connected layers with 64 hidden units each,
-    and Tanh activations. The output layer has a single neuron for scalar outputs.
-
-    Parameters
-    ----------
-    in_features : int, optional, default=1
-        Number of input features for the network.
-
-    Methods
-    -------
-    forward(x)
-        Forward pass through the network.
-
-    Returns
-    -------
-    torch.Tensor
-        The output of the network.
-    """
-
-    def __init__(self, in_features: int = 1):
-        super(NeuralNet, self).__init__()
-        self.net = nn.Sequential(nn.Linear(in_features, 64), nn.Tanh(),
-                                 nn.Linear(64, 64), nn.Tanh(), nn.Linear(64, 1))
-
-    def forward(self, x):
-        if not isinstance(x, torch.Tensor):
-            x = torch.tensor(x, dtype=torch.float32)
-        return self.net(x)
