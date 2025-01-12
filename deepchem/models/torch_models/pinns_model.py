@@ -90,6 +90,7 @@ class PINNModel(TorchModel):
                  data_weight: float = 1.0,
                  physics_weight: float = 1.0,
                  eval_fn: Optional[Callable] = None,
+                 mode: str = 'regression',
                  **kwargs) -> None:
         """
         Initialize PINNModel.
@@ -121,12 +122,13 @@ class PINNModel(TorchModel):
         """
 
         if model is None:
+            # Regression by default
             if in_features is not None:
                 model = MultilayerPerceptron(
                     d_input=in_features,
                     d_hidden=(100, 100, 100, 100, 100),
                     d_output=1,
-                    activation_fn='tanh')  # Regression by default
+                    activation_fn='tanh')
             else:
                 model = MultilayerPerceptron(d_input=1,
                                              d_hidden=(100, 100, 100, 100, 100),
@@ -138,7 +140,10 @@ class PINNModel(TorchModel):
         if not isinstance(pde_weights, list):
             pde_weights = [pde_weights] * len(pde_fn)
 
+        self.mode = mode
         self.loss_fn = loss_fn or self._loss_fn
+        if loss_fn == None:
+            self.data_loss_fn = nn.MSELoss() if self.mode == 'regression' else nn.CrossEntropyLoss()
         self.pde_fn = [pde_fn] if not isinstance(pde_fn, list) else pde_fn
         self.boundary_data = boundary_data
         self.eval_fn = eval_fn or self._default_eval_fn
@@ -264,7 +269,7 @@ class PINNModel(TorchModel):
 
         outputs = outputs[0]
         labels = labels[0]
-        data_loss = nn.MSELoss()(outputs, labels)
+        data_loss = self.data_loss_fn(outputs, labels)
         physics_loss = self._compute_pde_loss(torch.Tensor(outputs))
         boundary_loss = self._compute_boundary_loss()
 
