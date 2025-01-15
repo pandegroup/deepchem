@@ -148,13 +148,13 @@ class _GraphConvTorchModel(nn.Module):
         ])
 
         self.batch_norms: nn.ModuleList = nn.ModuleList([
-            nn.BatchNorm1d(num_features=64,
+            nn.BatchNorm1d(num_features=num_features,
                            eps=1e-3,
                            momentum=0.99,
                            affine=True,
                            track_running_stats=True)
             if batch_normalize else nn.Identity()
-            for _ in range(len(graph_conv_layers))
+            for num_features in graph_conv_layers
         ])
         self.batch_norms.append(
             nn.BatchNorm1d(num_features=dense_layer_size,
@@ -283,7 +283,7 @@ class GraphConvModel(TorchModel):
 
     def __init__(self,
                  n_tasks: int,
-                 number_input_features: List[int],
+                 number_input_features: Union[List[int], int],
                  graph_conv_layers: List[int] = [64, 64],
                  dense_layer_size: int = 128,
                  dropout: float = 0.0,
@@ -335,6 +335,9 @@ class GraphConvModel(TorchModel):
         self.n_classes: int = n_classes
         self.batch_size: int = batch_size
         self.uncertainty: bool = uncertainty
+        if isinstance(number_input_features, int):
+            number_input_features = [number_input_features
+                                    ] + graph_conv_layers[:-1]
         model = _GraphConvTorchModel(
             n_tasks,
             graph_conv_layers=graph_conv_layers,
