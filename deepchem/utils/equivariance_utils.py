@@ -3,6 +3,270 @@ from typing import Optional
 import torch
 
 
+def semifactorial(x: int) -> float:
+    """
+    Compute the semifactorial function x!!, defined as:
+    x!! = x * (x-2) * (x-4) * ...
+
+    Parameters
+    ----------
+    x : int
+        A positive integer.
+
+    Returns
+    -------
+    float
+        The value of x!!, computed iteratively.
+
+    Examples
+    --------
+    >>> semifactorial(5)
+    15.0
+    >>> semifactorial(6)
+    48.0
+    """
+    # edge cases
+    if x == 0 or x == 1:
+        return 1.0
+
+    y = 1.0
+    for n in range(x, 1, -2):
+        y *= n
+    return y
+
+
+def pochhammer(x: int, k: int) -> float:
+    """
+    Compute the Pochhammer symbol (x)_k , defined as:
+    (x)_k = x * (x+1) * (x+2) * ... * (x+k-1).
+
+    Parameters
+    ----------
+    x : int
+        The starting integer of the sequence.
+    k : int
+        The number of terms in the product.
+
+    Returns
+    -------
+    float
+        The Pochhammer symbol value.
+
+    Examples
+    --------
+    >>> pochhammer(3, 4)
+    360.0
+    >>> pochhammer(5, 2)
+    30.0
+    """
+    # handle edge case (k=0)
+    if k == 0:
+        return 1.0
+
+    xf = float(x)
+    for n in range(x + 1, x + k):
+        xf *= n
+    return xf
+
+
+def lpmv(d: int, m: int, x: torch.Tensor) -> torch.Tensor:
+    """
+    Compute the associated Legendre function P_l^m(x), including
+    the Condon-Shortley phase. The implementation includes the base case
+    for P_m^m(x), P_{m+1}^m(x), and uses a recurrence relation
+    for higher degrees.
+
+    Parameters
+    ----------
+    l : int
+        Degree of the Legendre polynomial.
+    m : int
+        Order of the Legendre polynomial.
+    x : torch.Tensor
+        A tensor of shape (N,) representing the input values for x,
+        where ( -1 <= x <= 1).
+
+    Returns
+    -------
+    torch.Tensor
+        A tensor of shape (N,) containing the values of P_l^m(x).
+
+
+    Examples
+    --------
+    >>> lpmv(2, 1, torch.tensor([0.5]))
+    tensor([-1.2990])
+    """
+    m_abs = abs(m)
+    if m_abs > d:
+        return torch.zeros_like(x)
+
+    # base case: P_m^m(x)
+    p_mm = ((-1)**m_abs * semifactorial(2 * m_abs - 1)) * torch.pow(
+        1 - x * x, m_abs / 2)
+
+    if d == m_abs:
+        return p_mm
+
+    # Compute P_{m+1}^m(x)
+    p_m1m = x * (2 * m_abs + 1) * p_mm
+
+    if d == m_abs + 1:
+        return p_m1m
+
+    # Recurrence relation for higher degrees (l)
+    p_lm = p_m1m.clone()
+    for i in range(m_abs + 2, d + 1):
+        p_lm = ((2 * i - 1) * x * p_m1m - (i + m_abs - 1) * p_mm) / (i - m_abs)
+        p_mm, p_m1m = p_m1m, p_lm
+
+    # Negative values of m
+    if m < 0:
+        p_lm *= ((-1)**m) * pochhammer(d - m + 1, -2 * m)
+
+    return p_lm
+
+
+class SphericalHarmonics:
+    """
+    A class for computing real tesseral spherical harmonics, including
+    the Condon-Shortley phase.
+
+    Methods
+    -------
+    get_element(l, m, theta, phi)
+        Compute the tesseral spherical harmonic Y_l^m(theta, phi).
+    get(l, theta, phi)
+        Compute all spherical harmonics of degree l for given angles.
+    """
+
+    def __init__(self):
+        self.leg = {}
+
+    def clear(self) -> None:
+        """Clear cached Legendre polynomial values to save RAM memory."""
+        self.leg = {}
+
+    def get_element(self, d: int, m: int, theta: torch.Tensor,
+                    phi: torch.Tensor) -> torch.Tensor:
+        """
+        Compute a single tesseral spherical harmonic Y_l^m(theta, phi).
+
+        Parameters
+        ----------
+        l : int
+            Degree of the spherical harmonic.
+        m : int
+            Order of the spherical harmonic.
+        theta : torch.Tensor
+            Tensor of polar angles (collatitude) in radians.
+        phi : torch.Tensor
+            Tensor of azimuthal angles (longitude) in radians.
+
+        Returns
+        -------
+        torch.Tensor
+            Tensor of the spherical harmonic values, same shape as `theta`.
+
+        Examples
+        --------
+        >>> theta = torch.tensor([0.0, math.pi / 2])
+        >>> phi = torch.tensor([0.0, math.pi])
+        >>> SphericalHarmonics().get_element(1, 0, theta, phi)
+        tensor([ 4.8860e-01, -2.1357e-08])
+        """
+
+        N = math.sqrt((2 * d + 1) / (4 * math.pi))
+        leg = lpmv(d, abs(m), torch.cos(theta))
+        if m == 0:
+            return N * leg
+        elif m > 0:
+            Y = torch.cos(m * phi) * leg
+        else:
+            Y = torch.sin(abs(m) * phi) * leg
+        N *= math.sqrt(2.0 / pochhammer(d - abs(m) + 1, 2 * abs(m)))
+        Y *= N
+        return Y
+
+    def get(self,
+            d: int,
+            theta: torch.Tensor,
+            phi: torch.Tensor,
+            refresh=True) -> torch.Tensor:
+        """
+        Compute all spherical harmonics of degree l.
+
+        Parameters
+        ----------
+        l : int
+            Degree of the spherical harmonics.
+        theta : torch.Tensor
+            Tensor of polar angles (collatitude) in radians.
+        phi : torch.Tensor
+            Tensor of azimuthal angles (longitude) in radians.
+
+        Returns
+        -------
+        torch.Tensor
+            A tensor of shape [*theta.shape, 2 * l + 1].
+
+        Examples
+        --------
+        >>> theta = torch.tensor([0.0, math.pi / 2])
+        >>> phi = torch.tensor([0.0, math.pi])
+        >>> SphericalHarmonics().get(1, theta, phi)
+        tensor([[-0.0000e+00,  4.8860e-01, -0.0000e+00],
+                [ 4.2715e-08, -2.1357e-08,  4.8860e-01]])
+        """
+        if refresh:
+            self.clear()
+        results = []
+        for m in range(-d, d + 1):
+            results.append(self.get_element(d, m, theta, phi))
+        return torch.stack(results, dim=-1)
+
+
+def irr_repr(order: int,
+             alpha: torch.Tensor,
+             beta: torch.Tensor,
+             gamma: torch.Tensor,
+             dtype: Optional[torch.dtype] = None) -> torch.Tensor:
+    """
+    Compute the irreducible representation of the special orthogonal group SO(3).
+
+    This function computes the Wigner D-matrix for the given order and angles (alpha, beta, gamma).
+    It is compatible with composition and spherical harmonics computations.
+
+    Parameters
+    ----------
+    order : int
+        The order of the representation.
+    alpha : float
+        The first Euler angle (rotation about the Y axis).
+    beta : float
+        The second Euler angle (rotation about the X axis).
+    gamma : float
+        The third Euler angle (rotation about the Y axis).
+    dtype : torch.dtype, optional
+        The desired data type of the resulting tensor. If None, the default dtype is used.
+
+    Returns
+    -------
+    torch.Tensor
+        The irreducible representation matrix of SO(3) for the specified order and angles.
+
+    Examples
+    --------
+    >>> irr_repr(1, torch.tensor(0.1), torch.tensor(0.2), torch.tensor(0.3))
+    tensor([[ 0.9216,  0.0587,  0.3836],
+            [ 0.0198,  0.9801, -0.1977],
+            [-0.3875,  0.1898,  0.9021]])
+    """
+    result = wigner_D(order, alpha, beta, gamma)[0]
+    return result.clone().detach() if dtype is None else result.clone().detach(
+    ).to(dtype)
+
+
 def su2_generators(k: int) -> torch.Tensor:
     """Generate the generators of the special unitary group SU(2) in a given representation.
 
@@ -316,7 +580,7 @@ def wigner_D(k: int, alpha: torch.Tensor, beta: torch.Tensor,
              [-0.5607,  0.2593,  0.7863]],
     <BLANKLINE>
             [[ 0.7056,  0.2199,  0.6737],
-             [ 0.0774,  0.9211, -0.3816],
+             [ 0.0774,  0.9211, -0.3817],
              [-0.7044,  0.3214,  0.6329]]])
     """
     # Ensure that alpha, beta, and gamma have the same shape for broadcasting.

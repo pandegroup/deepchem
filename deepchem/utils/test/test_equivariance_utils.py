@@ -1,4 +1,5 @@
 import unittest
+import math
 try:
     import torch
     has_torch = True
@@ -201,3 +202,84 @@ class TestEquivarianceUtils(unittest.TestCase):
                     dot_product = torch.dot(D_matrix[:, col1], D_matrix[:,
                                                                         col2])
                     self.assertAlmostEqual(dot_product.item(), 0.0, places=5)
+
+    @unittest.skipIf(not has_torch, "torch is not available")
+    def test_semifactorial(self) -> None:
+        # Test base cases
+        self.assertEqual(equivariance_utils.semifactorial(0), 1.0)
+        self.assertEqual(equivariance_utils.semifactorial(1), 1.0)
+
+        self.assertEqual(equivariance_utils.semifactorial(5),
+                         15.0)  # 5!! = 5 * 3 * 1
+        self.assertEqual(equivariance_utils.semifactorial(6),
+                         48.0)  # 6!! = 6 * 4 * 2
+
+    @unittest.skipIf(not has_torch, "torch is not available")
+    def test_pochhammer_base_case(self) -> None:
+        # Test k=0 (should return 1.0)
+        self.assertEqual(equivariance_utils.pochhammer(3, 0), 1.0)
+
+        self.assertEqual(equivariance_utils.pochhammer(3, 4),
+                         360.0)  # (3)_4 = 3 * 4 * 5 * 6
+        self.assertEqual(equivariance_utils.pochhammer(5, 2),
+                         30.0)  # (5)_2 = 5 * 6
+
+    @unittest.skipIf(not has_torch, "torch is not available")
+    def test_lpmv(self) -> None:
+        x = torch.tensor([0.5])
+        # Test P_2^1(x)
+        result = equivariance_utils.lpmv(2, 1, x)
+        expected = torch.tensor([-1.2990])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-4))
+
+        # Test P_1^1(x)
+        result = equivariance_utils.lpmv(1, 1, x)
+        expected = torch.tensor([-math.sqrt(1 - 0.5**2)])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-4))
+
+        # Test P_2^2(x)
+        result = equivariance_utils.lpmv(2, 2, x)
+        expected = torch.tensor([3 * (1 - 0.5**2)])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-4))
+
+    @unittest.skipIf(not has_torch, "torch is not available")
+    def test_spherical_harmonics(self) -> None:
+        theta = torch.tensor([0.0, math.pi / 2])
+        phi = torch.tensor([0.0, math.pi])
+        sh = equivariance_utils.SphericalHarmonics()
+
+        # Test Y_1^0(theta, phi)
+        result = sh.get_element(1, 0, theta, phi)
+        expected = torch.tensor([0.4886, -0.0000])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-4))
+
+        # Test Y_1^1(theta, phi)
+        result = sh.get_element(1, 1, theta, phi)
+        expected = torch.tensor([-0.0000, 0.4886])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-5))
+
+        # Get all spherical harmonics
+        result = sh.get(1, theta, phi)
+        expected = torch.tensor([[-0.0000, 0.4886, -0.0000],
+                                 [0.0000, -0.0000, 0.4886]])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-4))
+
+    @unittest.skipIf(not has_torch, "torch is not available")
+    def test_irr_repr(self) -> None:
+        # Test irreducible representation of SO3.
+        order = 1
+        alpha = torch.tensor(0.1)
+        beta = torch.tensor(0.2)
+        gamma = torch.tensor(0.3)
+
+        # Edge case: order = 0.
+        order_zero = 0
+        result_zero = equivariance_utils.irr_repr(order_zero, alpha, beta,
+                                                  gamma)
+        self.assertTrue(torch.allclose(result_zero, torch.tensor([[1.0]])))
+
+        result = equivariance_utils.irr_repr(order, alpha, beta, gamma)
+        expected = torch.tensor([[0.9216, 0.0587, 0.3836],
+                                 [0.0198, 0.9801, -0.1977],
+                                 [-0.3875, 0.1898, 0.9021]])
+        self.assertTrue(torch.allclose(result, expected, atol=1e-4))
