@@ -39,9 +39,9 @@ class Weave(nn.Module):
     >>> X = featurizer(["C", "CC"])
     >>> y = np.array([1, 0])
     >>> batch_size = 2
-    >>> weavemodel = dc.models.WeaveModel(n_tasks=1,n_weave=2, fully_connected_layer_sizes=[2000, 1000],mode="classification",batch_size=batch_size)
+    >>> weavemodel = dc.models.torch_models.WeaveModel(n_tasks=1,n_weave=2, fully_connected_layer_sizes=[2000, 1000],mode="classification",batch_size=batch_size)
     >>> atom_feat, pair_feat, pair_split, atom_split, atom_to_pair = weavemodel.compute_features_on_batch(X)
-    >>> model = Weave(n_tasks=1,n_weave=2,fully_connected_layer_sizes=[2000, 1000],mode="classification")
+    >>> model = dc.models.torch_models.Weave(n_tasks=1,n_weave=2,fully_connected_layer_sizes=[2000, 1000],mode="classification")
     >>> input_data = [atom_feat, pair_feat, pair_split, atom_split, atom_to_pair]
     >>> output = model(input_data)
 
@@ -357,7 +357,7 @@ class WeaveModel(TorchModel):
     >>> X = featurizer(["C", "CC"])
     >>> y = np.array([1, 0])
     >>> dataset = dc.data.NumpyDataset(X, y)
-    >>> model = dc.models.WeaveModel(n_tasks=1, n_weave=2, fully_connected_layer_sizes=[2000, 1000], mode="classification")
+    >>> model = dc.models.torch_models.WeaveModel(n_tasks=1, n_weave=2, fully_connected_layer_sizes=[2000, 1000], mode="classification")
     >>> loss = model.fit(dataset)
 
     References

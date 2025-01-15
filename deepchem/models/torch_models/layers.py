@@ -10,10 +10,9 @@ try:
     from torch import Tensor
     import torch.nn as nn
     import torch.nn.functional as F
-    from deepchem.models.torch_models.flows import Affine
 except ModuleNotFoundError:
     raise ImportError('These classes require PyTorch to be installed.')
-
+from deepchem.models.torch_models.flows import Affine
 try:
     from torch_geometric.utils import scatter
     from torch_geometric.nn import MessagePassing
