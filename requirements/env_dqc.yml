@@ -16,5 +16,4 @@ dependencies:
    - pytest
    - PyYAML
    - yamlloader
-   - --prefer-binary
    - pyscf[all]

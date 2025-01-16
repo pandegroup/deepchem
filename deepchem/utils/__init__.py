@@ -163,6 +163,8 @@ try:
     from deepchem.utils.safeops_utils import occnumber
     from deepchem.utils.safeops_utils import get_floor_and_ceil
     from deepchem.utils.safeops_utils import safe_cdist
+
+    from deepchem.utils.optimizer_utils import LambOptimizer
 except ModuleNotFoundError as e:
     logger.warning(
         f'Skipped loading some Pytorch utilities, missing a dependency. {e}')

@@ -25,6 +25,8 @@ jobs:
         sudo rm -rf /opt/ghc
         sudo rm -rf "/usr/local/share/boost"
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        sudo docker image prune --all --force
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
     - uses: actions/checkout@v4
     - name: Cache pip modules for Linux
       uses: actions/cache@v4
@@ -120,6 +122,8 @@ jobs:
         pip install conda-merge;
         cd requirements
         if [ "$(uname)" == 'Linux' ]; then
+          sudo apt-get update
+          sudo apt-get install -y libatlas-base-dev libblas-dev liblapack-dev libhdf5-dev
           conda-merge env_common.yml env_test.yml env_ubuntu_3_11.yml tensorflow/env_tensorflow.cpu.yml torch/env_torch.cpu.yml jax/env_jax.cpu.yml >  env.yml
         elif [  "$(uname)" == 'Darwin' ]; then
           conda-merge env_common.yml env_test.yml env_mac_3_11.yml tensorflow/env_tensorflow.cpu.yml torch/env_torch.mac.cpu.yml jax/env_jax.cpu.yml > env.yml

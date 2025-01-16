@@ -18,6 +18,7 @@ jobs:
         sudo rm -rf "/usr/local/share/boost"
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
         sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
     - uses: actions/checkout@v4
     - name: Cache pip modules for Linux
       uses: actions/cache@v4
@@ -60,6 +61,7 @@ jobs:
         sudo rm -rf "/usr/local/share/boost"
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
         sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
     - uses: actions/checkout@v4
     - name: Get the tag version
       id: get_tag_version

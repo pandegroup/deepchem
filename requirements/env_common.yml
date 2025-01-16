@@ -8,13 +8,13 @@ dependencies:
   - pdbfixer
   - pip
   - pip:
-    - numpy==1.26.4
+    - numpy<1.26
     - rdkit==2023.09.5
     - pre-commit
     - biopython
     - dgllife
     - lightgbm
-    - git+https://github.com/hackingmaterials/matminer.git
+    - matminer
     - mordred
     - networkx
     - pillow

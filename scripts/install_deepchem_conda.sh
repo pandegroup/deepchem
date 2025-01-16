@@ -41,6 +41,8 @@ else
         fi
     elif [ "$(uname)" = 'Linux' ]; then
         if [ "$1" = "3.11" ]; then
+            sudo apt update
+            sudo apt install -y libatlas-base-dev libblas-dev liblapack-dev libhdf5-dev
             conda-merge $dir/env_common.yml $dir/env_test.yml $dir/env_ubuntu_3_11.yml $dir/tensorflow/env_tensorflow.cpu.yml $dir/torch/env_torch.cpu.yml $dir/jax/env_jax.cpu.yml > $PWD/env.yml
         else
             conda-merge $dir/env_common.yml $dir/env_test.yml $dir/env_ubuntu.yml $dir/tensorflow/env_tensorflow.cpu.yml $dir/torch/env_torch.cpu.yml $dir/jax/env_jax.cpu.yml > $PWD/env.yml

@@ -2,8 +2,6 @@ dependencies:
   - pip:
     - -f https://download.pytorch.org/whl/cpu/torch_stable.html
     - -f https://data.dgl.ai/wheels/torch-2.2/repo.html
-    # The above line is commented out due to a bug in the DGL wheel repository.
-    # It contains wheels for the GPU version that are not compatible with the CPU version.
     - torchdata<0.8.0
     - dgl
     - torch==2.2.1+cpu

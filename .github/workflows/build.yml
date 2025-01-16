@@ -32,6 +32,9 @@ jobs:
         sudo rm -rf "/usr/local/share/boost"
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
         sudo rm -rf /usr/local/lib/android
+        sudo docker image prune --all --force
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
     - uses: actions/checkout@v4
     - name: Cache pip modules for Linux
       if: runner.os == 'Linux'

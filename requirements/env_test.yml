@@ -8,3 +8,4 @@ dependencies:
     - types-pkg_resources==0.1.0
     - types-setuptools
     - yapf==0.32.0
+    - python-Levenshtein
