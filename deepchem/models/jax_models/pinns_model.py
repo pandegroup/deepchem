@@ -116,7 +116,7 @@ class PINNModel(JaxModel):
                  grad_fn: Callable = create_default_gradient_fn,
                  update_fn: Callable = create_default_update_fn,
                  eval_fn: Callable = create_default_eval_fn,
-                 rng=jax.random.PRNGKey(1),
+                 rng: Optional[jax.Array] = None,
                  log_frequency: int = 100,
                  **kwargs):
         """
@@ -154,6 +154,7 @@ class PINNModel(JaxModel):
         warnings.warn(
             'PinnModel is still in active development and we could change the design of the API in the future.'
         )
+        rng = jax.random.PRNGKey(1) if rng is None else rng
         self.boundary_data = initial_data
         super(PINNModel,
               self).__init__(forward_fn, params, None, output_types, batch_size,

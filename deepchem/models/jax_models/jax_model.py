@@ -105,7 +105,7 @@ class JaxModel(Model):
                  grad_fn: Callable = create_default_gradient_fn,
                  update_fn: Callable = create_default_update_fn,
                  eval_fn: Callable = create_default_eval_fn,
-                 rng=jax.random.PRNGKey(1),
+                 rng: Optional[jax.Array] = None,
                  log_frequency: int = 100,
                  **kwargs):
         """
@@ -170,7 +170,7 @@ class JaxModel(Model):
         self.params = params
         self._built = False
         self.log_frequency = log_frequency
-        self.rng = rng
+        self.rng = jax.random.PRNGKey(1) if rng is None else rng
         self._create_gradient_fn = grad_fn
         self._create_update_fn = update_fn
         self._create_eval_fn = eval_fn
