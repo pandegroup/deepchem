@@ -85,15 +85,18 @@ def load_qm9(
     featurizer: Featurizer or str
         the featurizer to use for processing the data.  Alternatively you can pass
         one of the names from dc.molnet.featurizers as a shortcut.
+        You can check the description of all the available featurizers here: https://deepchem.readthedocs.io/en/latest/api_reference/featurizers.html
     splitter: Splitter or str
         the splitter to use for splitting the data into training, validation, and
         test sets.  Alternatively you can pass one of the names from
         dc.molnet.splitters as a shortcut.  If this is None, all the data
         will be included in a single dataset.
+        You can check the description of all the available splitters here: https://deepchem.readthedocs.io/en/latest/api_reference/splitters.html
     transformers: list of TransformerGenerators or strings
         the Transformers to apply to the data.  Each one is specified by a
         TransformerGenerator or, as a shortcut, one of the names from
         dc.molnet.transformers.
+        You can check the description of all the available transformers here: https://deepchem.readthedocs.io/en/latest/api_reference/transformers.html
     reload: bool
         if True, the first call for a particular featurizer and splitter will cache
         the datasets to disk, and subsequent calls will reload the cached datasets.
