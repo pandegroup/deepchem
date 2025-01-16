@@ -991,7 +991,10 @@ class TorchModel(Model):
                  ids_b) in dataset.iterbatches(batch_size=self.batch_size,
                                                deterministic=deterministic,
                                                pad_batches=pad_batches):
-                yield ([X_b], [y_b], [w_b])
+                if y_b is not None:
+                    yield ([X_b], [y_b], [w_b])
+                else:
+                    yield ([X_b], None, [w_b])
 
     def save_checkpoint(self,
                         max_checkpoints_to_keep: int = 5,
