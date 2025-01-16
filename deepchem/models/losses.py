@@ -802,7 +802,7 @@ class GroverPretrainLoss(Loss):
 
     Reference
     ---------
-    .. Rong, Yu, et al. "Self-supervised graph transformer on large-scale molecular data." Advances in Neural Information Processing Systems 33 (2020): 12559-12571.
+    .. [1] Rong, Yu, et al. "Self-supervised graph transformer on large-scale molecular data." Advances in Neural Information Processing Systems 33 (2020): 12559-12571.
     """
 
     def _create_pytorch_loss(self):
