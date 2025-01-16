@@ -3294,7 +3294,7 @@ class DTNNGather(tf.keras.layers.Layer):
             Number of features for each atom
         n_outputs: int, optional
             Number of features for each molecule(output)
-        layer_sizes: list of int, optional(default=[1000])
+        layer_sizes: list of int, optional(default=[100])
             Structure of hidden layer(s)
         init: str, optional
             Weight initialization for filters.
