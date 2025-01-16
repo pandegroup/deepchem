@@ -5,7 +5,7 @@ BBBC (BBBC001),Images of HT29 colon cancer cells,Images,6,`ref <https://data.bro
 BBBC (BBBC002),Images of Drosophilia Kc167 cells,Images,50,`ref <https://data.broadinstitute.org/bbbc/BBBC002/>`_
 BBBC (BBBC003),DIC Images of Mouse Embryos,Images,15,`ref <https://data.broadinstitute.org/bbbc/BBBC003/>`_
 BBBC (BBBC004),Synthetic Images of clustered nuclei,Images,20,`ref <https://data.broadinstitute.org/bbbc/BBBC004/>`_
-BBBC (BBBC004),Synthetic Images of clustered nuclei,Images,19200,`ref <https://data.broadinstitute.org/bbbc/BBBC005/>`_
+BBBC (BBBC005),Synthetic Images of clustered nuclei,Images,19200,`ref <https://data.broadinstitute.org/bbbc/BBBC005/>`_
 BBBP,Blood-Brain Barrier Penetration designed for the modeling and prediction of barrier permeability,Binary labels on permeability properties,2000,`ref <https://pubs.rsc.org/en/content/articlehtml/2018/sc/c7sc02664a>`_
 Cell Counting,Synthetic emulations of fluorescence microscopic images of bacterial cells,Images,200,`ref <http://www.robots.ox.ac.uk/~vgg/research/counting/index_org.html.>`_
 ChEMBL (set = ‘sparse’),A sparse subset of ChEMBL with activity data for one target,Molecules,244 245,`ref <https://www.ebi.ac.uk/chembl/.>`_
