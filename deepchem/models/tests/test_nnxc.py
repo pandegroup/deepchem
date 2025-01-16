@@ -23,9 +23,9 @@ def dummymodel():
     return DummyModel(n)
 
 
-@pytest.mark.dqc
+@pytest.mark.torch
 def test_nnlda():
-    from dqc.utils.datastruct import ValGrad
+    from deepchem.utils.dft_utils import ValGrad
     from deepchem.models.dft.nnxc import NNLDA
     torch.manual_seed(42)
     # https://github.com/diffqc/dqc/blob/742eb2576418464609f942def4fb7c3bbdc0cd82/dqc/test/test_xc.py#L15
@@ -39,9 +39,9 @@ def test_nnlda():
     torch.testing.assert_close(output, expected_output, atol=1e-4, rtol=0)
 
 
-@pytest.mark.dqc
+@pytest.mark.torch
 def test_hybridxc():
-    from dqc.utils.datastruct import ValGrad
+    from deepchem.utils.dft_utils import ValGrad
     from deepchem.models.dft.nnxc import HybridXC
     torch.manual_seed(42)
     n = 2

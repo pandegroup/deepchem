@@ -71,7 +71,7 @@ class DFTXC(torch.nn.Module):
             Calculated value of the data point after running the Kohn Sham iterations
             using the neural network XC functional.
         """
-        hybridxc = HybridXC(self.xcstr, self.nnmodel, aweight0=0.0)
+        hybridxc = HybridXC(self.xcstr, self.nnmodel, aweight0=1.0)
         output = []
         for entry in inputs:
             evl = XCNNSCF(hybridxc, entry)
