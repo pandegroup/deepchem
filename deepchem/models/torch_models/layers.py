@@ -473,6 +473,7 @@ class MultiHeadedMATAttention(nn.Module):
                  dropout_p: float = 0.0,
                  output_bias: bool = True):
         """Initialize a multi-headed attention layer.
+        
         Parameters
         ----------
         dist_kernel: str
@@ -490,6 +491,7 @@ class MultiHeadedMATAttention(nn.Module):
         output_bias: bool
             If True, dense layers will use bias vectors.
         """
+        
         super().__init__()
         if dist_kernel == "softmax":
             self.dist_kernel = lambda x: torch.softmax(-x, dim=-1)
